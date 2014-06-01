@@ -9,7 +9,7 @@ INCLUDE=-Iinclude/ -Iinclude/catch/include/
 LIBS=-lpthread -lncurses
 
 # remember to add all sources from subdirectories as well here
-SOURCES=src/*cc
+SOURCES=src/*cc test/*cc
 
 OBJECTS=$(SOURCES:.cc=.o)
 
@@ -25,5 +25,4 @@ test: clean $(EXECUTABLE)
 	./$(EXECUTABLE) > results.log
 
 clean:
-	rm -f $(EXECUTABLE) *.o
-
+	rm -f $(EXECUTABLE) *.o *.log
