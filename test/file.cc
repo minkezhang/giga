@@ -15,4 +15,9 @@ TEST_CASE("file|initialization") {
 	REQUIRE(c->get_pos() == 0);
 	REQUIRE(c->get_id() == 0);
 	REQUIRE(d->get_id() == 1);
+
+	file->close(c);
+	REQUIRE(file->get_client_list().size() == 1);
+	file->close(d);
+	REQUIRE(file->get_client_list().size() == 0);
 }
