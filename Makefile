@@ -3,7 +3,7 @@ CC=g++
 # yadda yadda yadda beware -O3 optimizations and threading
 CFLAGS=-Wall -Werror -O3 -std=c++11 -g
 
-INCLUDE=-Iinclude/
+INCLUDE=-Iinclude/ -Iinclude/catch/include/
 
 # std::thread relies on the pthread lib          
 LIBS=-lpthread -lncurses
@@ -13,7 +13,7 @@ SOURCES=src/*cc
 
 OBJECTS=$(SOURCES:.cc=.o)
 
-EXECUTABLE=giga.app
+EXECUTABLE=giga_tests.app
 
 all: $(SOURCES) $(EXECUTABLE)
 
@@ -22,7 +22,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 # remember to run unit tests
 test: clean $(EXECUTABLE)
-	./$(EXECUTABLE) --test
+	./$(EXECUTABLE) > results.log
 
 clean:
 	rm -f $(EXECUTABLE) *.o
