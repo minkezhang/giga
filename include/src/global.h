@@ -2,7 +2,7 @@
 #define _GLOBAL_H
 
 namespace giga {
-	typedef unsigned long long int giga_size;
+	typedef long long int giga_size;
 }
 
 #endif

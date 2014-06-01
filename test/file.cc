@@ -5,7 +5,7 @@
 #include "src/file.h"
 
 TEST_CASE("file|initialization") {
-	std::shared_ptr<giga::File> file (new giga::File("file_open"));
+	std::shared_ptr<giga::File> file (new giga::File("file_open", "r"));
 	REQUIRE(file->get_client_list().size() == 0);
 	std::shared_ptr<giga::Client> c = file->open();
 	REQUIRE(file->get_client_list().size() == 1);

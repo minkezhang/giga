@@ -10,6 +10,7 @@
 #include <mutex>
 #include <vector>
 
+#include "src/block.h"
 #include "src/info.h"
 #include "src/client.h"
 #include "src/global.h"
@@ -18,7 +19,7 @@ namespace giga {
 	class Client;
 	class File : public std::enable_shared_from_this<File> {
 		public:
-			File(std::string filename);
+			File(std::string filename, std::string mode);
 
 			std::map<int, std::shared_ptr<giga::ClientInfo>> get_client_list();
 
@@ -38,12 +39,14 @@ namespace giga {
 			int n_clients;
 
 			std::string filename;
+			std::string mode;
+
 			std::map<int, std::shared_ptr<ClientInfo>> client_list;
 
 			std::mutex client_list_lock;
 
 			// data is represented by a linked list -- gives location of the first block of data
-			// std::shared_ptr<Block> head_block;
+			std::shared_ptr<Block> head_block;
 
 			// list of blocks whose data is loaded
 			// std::vector<std::shared_ptr<BlockInfo>> cache;
