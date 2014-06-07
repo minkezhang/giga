@@ -47,6 +47,9 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
 	return(0);
 }
 
+/**
+ * set block_offset as if the current block_offset pointer = 0
+ */
 giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, std::string buffer, giga::giga_size n_bytes) {
 	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
 	giga::giga_size n = info->get_block()->read(info->get_block_offset(), buffer, n_bytes);

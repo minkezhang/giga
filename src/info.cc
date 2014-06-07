@@ -30,8 +30,9 @@ giga::giga_size giga::ClientInfo::get_global_position() {
 
 /**
  * lock self, lock block
+ * n_bytes as if we're dealing with this->block_offset = 0
  */
-void giga::ClientInfo::set_block_offset(giga_size n_bytes) {
+void giga::ClientInfo::set_block_offset(giga::giga_size n_bytes) {
 	// set block if necessary
 	if(n_bytes > 0) {
 		while((this->block_offset + n_bytes) > this->block->get_size()) {
