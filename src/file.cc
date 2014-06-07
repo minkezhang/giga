@@ -36,7 +36,10 @@ std::map<int, std::shared_ptr<giga::ClientInfo>> giga::File::get_client_list() {
  * lock the client list while doing so
  */
 giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& client) {
-	return(this->client_list[client->get_id()]->get_global_position());
+	this->lock_clients();
+	giga_size result = this->client_list[client->get_id()]->get_global_position();
+	this->unlock_clients();
+	return(result);
 }
 
 /**
@@ -44,25 +47,32 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  * lock client list while doing so
  */
 giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
-	return(0);
+	this->lock_clients();
+	giga_size result = 0;
+	this->unlock_clients();
+	return(result);
 }
 
 /**
  * set block_offset as if the current block_offset pointer = 0
  */
 giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, std::string buffer, giga::giga_size n_bytes) {
+	client->lock_client();
 	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
 	giga::giga_size n = info->get_block()->read(info->get_block_offset(), buffer, n_bytes);
 
 	info->set_block_offset(info->get_block_offset() + n);
+	client->unlock_client();
 	return(n);
 }
 
 giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, std::string buffer) {
+	client->lock_client();
 	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
 	giga::giga_size n = info->get_block()->write(info->get_block_offset(), buffer);
 
 	info->set_block_offset(info->get_block_offset() + n);
+	client->unlock_client();
 	return(n);
 }
 
@@ -82,3 +92,13 @@ void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 }
 
 void giga::File::save() {}
+
+void giga::File::lock_clients() {
+	this->client_list_lock.lock();
+	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->lock_client(); }
+}
+
+void giga::File::unlock_clients() {
+	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->unlock_client(); }
+	this->client_list_lock.unlock();
+}

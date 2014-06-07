@@ -41,12 +41,15 @@ namespace giga {
 			std::string filename;
 			std::string mode;
 
-			std::map<int, std::shared_ptr<ClientInfo>> client_list;
-
 			std::mutex client_list_lock;
+
+			std::map<int, std::shared_ptr<ClientInfo>> client_list;
 
 			// data is represented by a linked list -- gives location of the first block of data
 			std::shared_ptr<Block> head_block;
+
+			void lock_clients();
+			void unlock_clients();
 
 			// list of blocks whose data is loaded
 			// std::vector<std::shared_ptr<BlockInfo>> cache;

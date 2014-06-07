@@ -24,9 +24,13 @@ namespace giga {
 			giga_size read(std::string buffer, giga_size n_bytes);
 			giga_size write(std::string buffer);
 
+			void lock_client();
+			void unlock_client();
+
 		private:
 			int id;
 			std::shared_ptr<File> file;
+			std::mutex client_lock;
 	};
 }
 
