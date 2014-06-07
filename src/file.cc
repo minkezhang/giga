@@ -31,27 +31,35 @@ giga::File::File(std::string filename, std::string mode) {
 
 std::map<int, std::shared_ptr<giga::ClientInfo>> giga::File::get_client_list() { return(this->client_list); }
 
+/**
+ * get the client global position
+ * lock the client list while doing so
+ */
 giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& client) {
 	return(this->client_list[client->get_id()]->get_global_position());
 }
 
-giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) { return(0); }
+/**
+ * set the client block and blockoffset that corresponds to the global pos input
+ * lock client list while doing so
+ */
+giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
+	return(0);
+}
 
 giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, std::string buffer, giga::giga_size n_bytes) {
 	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
-	giga::giga_size n = info->get_block()->read(buffer, n_bytes);
+	giga::giga_size n = info->get_block()->read(info->get_block_offset(), buffer, n_bytes);
 
 	info->set_block_offset(info->get_block_offset() + n);
-	info->set_global_position(info->get_global_position() + n);
 	return(n);
 }
 
 giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, std::string buffer) {
 	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
-	giga::giga_size n = info->get_block()->write(buffer);
+	giga::giga_size n = info->get_block()->write(info->get_block_offset(), buffer);
 
 	info->set_block_offset(info->get_block_offset() + n);
-	info->set_global_position(info->get_global_position() + n);
 	return(n);
 }
 

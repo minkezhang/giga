@@ -6,7 +6,7 @@ CFLAGS=-Wall -Werror -O3 -std=c++11 -g
 INCLUDE=-Iinclude/ -Iinclude/catch/include/
 
 # std::thread relies on the pthread lib          
-LIBS=-lpthread -lncurses
+LIBS=-lpthread
 
 # remember to add all sources from subdirectories as well here
 SOURCES=src/*cc test/*cc

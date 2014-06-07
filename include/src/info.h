@@ -21,14 +21,12 @@ namespace giga {
 			giga_size get_global_position();
 
 			void set_block_offset(giga_size n_bytes);
-			void set_global_position(giga_size n_bytes);
 
 		private:
 			std::shared_ptr<Client> client;
 			std::shared_ptr<Block> block;
 
 			giga_size block_offset;
-			giga_size global_position;
 	};
 }
 

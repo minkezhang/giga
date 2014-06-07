@@ -15,12 +15,12 @@ void giga::Block::unload() {
 	this->is_loaded = 0;
 }
 
-giga::giga_size giga::Block::read(std::string buffer, giga::giga_size n_bytes) {
+giga::giga_size giga::Block::read(giga::giga_size start, std::string buffer, giga::giga_size n_bytes) {
 	buffer.assign("...");
 	return(3);
 }
 
-giga::giga_size giga::Block::write(std::string buffer) {
+giga::giga_size giga::Block::write(giga::giga_size start, std::string buffer) {
 	this->is_dirty = 1;
 	return(buffer.length());
 }

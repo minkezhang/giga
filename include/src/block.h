@@ -21,8 +21,8 @@ namespace giga {
 			void load();
 			void unload();
 
-			giga_size read(std::string buffer, giga_size n_bytes);
-			giga_size write(std::string buffer);
+			giga_size read(giga_size start, std::string buffer, giga_size n_bytes);
+			giga_size write(giga_size start, std::string buffer);
 
 		private:
 			std::string id;
