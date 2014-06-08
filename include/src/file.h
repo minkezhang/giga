@@ -27,8 +27,8 @@ namespace giga {
 
 			giga_size seek(const std::shared_ptr<Client>& client, giga_size global_pos);
 
-			giga_size read(const std::shared_ptr<Client>& client, std::string buffer, giga_size n_bytes);
-			giga_size write(const std::shared_ptr<Client>& client, std::string buffer);
+			giga_size read(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
+			giga_size write(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer);
 
 			std::shared_ptr<Client> open();
 			void close(const std::shared_ptr<Client>& client);

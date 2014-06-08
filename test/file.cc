@@ -2,10 +2,13 @@
 
 #include <memory>
 
+#include "src/exception.h"
 #include "src/file.h"
 
 TEST_CASE("file|initialization") {
-	std::shared_ptr<giga::File> file (new giga::File("file_open", "r"));
+	REQUIRE_THROWS_AS(giga::File("test/files/nonexistent.txt", "r"), giga::FileNotFound);
+
+	std::shared_ptr<giga::File> file (new giga::File("test/files/empty.txt", "r"));
 	REQUIRE(file->get_client_list().size() == 0);
 	std::shared_ptr<giga::Client> c = file->open();
 	REQUIRE(file->get_client_list().size() == 1);
