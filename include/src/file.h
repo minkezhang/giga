@@ -11,15 +11,18 @@
 #include <vector>
 
 #include "src/block.h"
-#include "src/info.h"
 #include "src/client.h"
+#include "src/config.h"
 #include "src/global.h"
+#include "src/info.h"
 
 namespace giga {
 	class Client;
+	class Block;
 	class File : public std::enable_shared_from_this<File> {
 		public:
 			File(std::string filename, std::string mode);
+			File(std::string filename, std::string mode, const std::shared_ptr<Config>& config);
 
 			std::map<int, std::shared_ptr<giga::ClientInfo>> get_client_list();
 
@@ -47,6 +50,8 @@ namespace giga {
 
 			// data is represented by a linked list -- gives location of the first block of data
 			std::shared_ptr<Block> head_block;
+
+			void allocate(const std::shared_ptr<Block>& block);
 
 			void lock_clients();
 			void unlock_clients();

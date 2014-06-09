@@ -1,7 +1,8 @@
 #include <cstdio>
 #include <errno.h>
 #include <sstream>
-#include <stdio.h>
+
+#include <iostream>
 
 #include "src/exception.h"
 
@@ -18,6 +19,7 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 }
 
 void giga::Block::load(std::string filename, std::string mode) {
+	this->block_lock.lock();
 	this->is_loaded = 1;
 	std::ostringstream path;
 	if(this->is_dirty) {
@@ -44,24 +46,25 @@ void giga::Block::load(std::string filename, std::string mode) {
 	this->data.assign(std::string(data, this->size));
 
 	free((void *) data);
+	this->block_lock.unlock();
 }
 
 void giga::Block::unload() {
+	this->block_lock.lock();
 	this->is_loaded = 0;
+	this->block_lock.unlock();
 }
 
 giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
 	this->block_lock.lock();
-	std::shared_ptr<giga::Block> block = this->shared_from_this();
-	while(n_bytes != 0) {
-		size_t bytes_read = ((this->size - start) < (size_t) n_bytes) ? this->size - start : (size_t) n_bytes;
-		buffer->append(this->data.substr(start, bytes_read));
-		n_bytes -= bytes_read;
-		if(block->next == NULL) { break; }
-		block = block->next;
-	}
+
+	// check for is_loaded and raise error
+
+	size_t bytes_read = ((this->size - start) < (size_t) n_bytes) ? this->size - start : (size_t) n_bytes;
+	buffer->append(this->data.substr(start, bytes_read));
+
 	this->block_lock.unlock();
-	return(buffer->length());
+	return(bytes_read);
 }
 
 giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer) {

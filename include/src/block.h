@@ -5,9 +5,11 @@
 #include <memory>
 #include <mutex>
 
+#include "src/file.h"
 #include "src/global.h"
 
 namespace giga {
+	class File;
 	class Block : public std::enable_shared_from_this<Block> {
 		public:
 			Block(giga_size global_offset, size_t size, const std::shared_ptr<Block>& prev, const std::shared_ptr<Block>& next);

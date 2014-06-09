@@ -9,6 +9,7 @@
 
 namespace giga {
 	class Client;
+	class Block;
 	class ClientInfo {
 		public:
 			ClientInfo(const std::shared_ptr<Client>& client, const std::shared_ptr<Block>& block);
@@ -20,6 +21,7 @@ namespace giga {
 			giga_size get_block_offset();
 			giga_size get_global_position();
 
+			void set_block(const std::shared_ptr<Block>& block);
 			void set_block_offset(giga_size n_bytes);
 
 		private:

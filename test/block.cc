@@ -4,8 +4,9 @@
 
 #include <iostream>
 
-#include "src/file.h"
 #include "src/client.h"
+#include "src/config.h"
+#include "src/file.h"
 
 TEST_CASE("block|read") {
 	std::shared_ptr<std::string> buffer (new std::string);
@@ -22,11 +23,9 @@ TEST_CASE("block|read") {
 
 	file_empty->close(c_empty);
 
-	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "r"));
+	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(1))));
 	std::shared_ptr<giga::Client> c_five = file_five->open();
 	n_bytes = c_five->read(buffer, 10);
-
-	std::cout << "'" << buffer->c_str() << "'" << std::endl;
 
 	REQUIRE(n_bytes == 5);
 	REQUIRE(buffer->compare("abcd\n") == 0);

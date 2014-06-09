@@ -28,6 +28,10 @@ giga::giga_size giga::ClientInfo::get_global_position() {
 	return(global_pos + this->block_offset);
 }
 
+void giga::ClientInfo::set_block(const std::shared_ptr<giga::Block>& block) {
+	this->block = block;
+}
+
 /**
  * lock self, lock block
  * n_bytes as if we're dealing with this->block_offset = 0

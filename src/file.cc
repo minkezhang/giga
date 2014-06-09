@@ -1,12 +1,13 @@
 #include <memory>
-#include <ostream>
 #include <sys/stat.h>
 #include <vector>
+
+#include <iostream>
 
 #include "src/exception.h"
 #include "src/file.h"
 
-giga::File::File(std::string filename, std::string mode) {
+giga::File::File(std::string filename, std::string mode, const std::shared_ptr<giga::Config>& config) {
 	this->filename = filename;
 	this->mode = mode;
 	this->n_clients = 0;
@@ -23,13 +24,16 @@ giga::File::File(std::string filename, std::string mode) {
 
 	int result = stat(filename.c_str(), &stat_buf);
 
-	size_t page_size = 16 * 1024;
+	size_t page_size = config->get_page_size();
 	giga_size s = (result == 0) ? stat_buf.st_size : -1;
 
 	this->head_block = NULL;
 	for(giga_size global_pos = 0; global_pos < s; global_pos += page_size) {
 		size_t size = (s - global_pos > (giga_size) page_size) ? page_size : (s - global_pos);
 		std::shared_ptr<giga::Block> block (new giga::Block(global_pos, size, this->head_block, NULL));
+		if(this->head_block != NULL) {
+			this->head_block->set_next(block);
+		}
 		this->head_block = block;
 	}
 
@@ -40,6 +44,8 @@ giga::File::File(std::string filename, std::string mode) {
 		}
 	}
 }
+
+giga::File::File(std::string filename, std::string mode) : giga::File::File(filename, mode, std::shared_ptr<giga::Config> (new giga::Config())) {}
 
 std::map<int, std::shared_ptr<giga::ClientInfo>> giga::File::get_client_list() { return(this->client_list); }
 
@@ -76,18 +82,25 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		return(0);
 	}
 
-	std::shared_ptr<giga::Block> block = this->client_list[client->get_id()]->get_block();
+	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
 
-	if(!block->get_is_loaded()) {
-		// lock
-		// select block to unload
-		block->load(this->filename, this->mode);
+	giga::giga_size n = 0;
+	while(n < n_bytes) {
+		if(!info->get_block()->get_is_loaded()) {
+			this->allocate(info->get_block());
+		}
+
+		n += info->get_block()->read(info->get_block_offset(), buffer, (n_bytes - n));
+		if(n_bytes != 0 && info->get_block()->get_next() != NULL) {
+			info->set_block(info->get_block()->get_next());
+			info->set_block_offset(0);
+		} else {
+			// we have reached the end of the file
+			info->set_block_offset(info->get_block_offset() + n);
+			break;
+		}
 	}
 
-	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
-	giga::giga_size n = info->get_block()->read(info->get_block_offset(), buffer, n_bytes);
-
-	info->set_block_offset(info->get_block_offset() + n);
 	client->unlock_client();
 	return(n);
 }
@@ -97,9 +110,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 	std::shared_ptr<giga::Block> block = this->client_list[client->get_id()]->get_block();
 
 	if(!block->get_is_loaded()) {
-		// lock
-		// select block to unload
-		block->load(this->filename, this->mode);
+		this->allocate(block);
 	}
 
 	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
@@ -135,4 +146,10 @@ void giga::File::lock_clients() {
 void giga::File::unlock_clients() {
 	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->unlock_client(); }
 	this->client_list_lock.unlock();
+}
+
+void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
+	// lock
+	// select block to unload
+	block->load(this->filename, this->mode);
 }
