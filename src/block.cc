@@ -50,6 +50,8 @@ void giga::Block::load(std::string filename, std::string mode) {
 }
 
 void giga::Block::unload() {
+	throw(giga::NotImplemented("giga::Block::unload"));
+
 	this->block_lock.lock();
 	this->is_loaded = 0;
 	this->block_lock.unlock();
@@ -57,8 +59,9 @@ void giga::Block::unload() {
 
 giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
 	this->block_lock.lock();
-
-	// check for is_loaded and raise error
+	if(!this->is_loaded) {
+		throw(giga::InvalidOperation("giga::Block::read", "attempted to read an unloaded block"));
+	}
 
 	size_t bytes_read = ((this->size - start) < (size_t) n_bytes) ? this->size - start : (size_t) n_bytes;
 	buffer->append(this->data.substr(start, bytes_read));
@@ -68,6 +71,7 @@ giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<s
 }
 
 giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer) {
+	throw(giga::NotImplemented("giga::Block::write"));
 	this->block_lock.lock();
 	this->is_dirty = 1;
 	this->global_offset = 0;

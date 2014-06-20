@@ -16,18 +16,25 @@ TEST_CASE("block|read") {
 
 	std::shared_ptr<giga::Client> c_empty = file_empty->open();
 
-	giga::giga_size n_bytes = c_empty->read(buffer, 10);
-	REQUIRE(n_bytes == 0);
-
+	REQUIRE(c_empty->read(buffer, 10) == 0);
 	REQUIRE(buffer->compare("") == 0);
 
 	file_empty->close(c_empty);
 
-	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(1))));
+	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2))));
 	std::shared_ptr<giga::Client> c_five = file_five->open();
-	n_bytes = c_five->read(buffer, 10);
 
-	REQUIRE(n_bytes == 5);
-	REQUIRE(buffer->compare("abcd\n") == 0);
+	REQUIRE(c_five->read(buffer, 0) == 0);
+	REQUIRE(buffer->compare("") == 0);
+
+	REQUIRE(c_five->read(buffer, 1) == 1);
+	REQUIRE(buffer->compare("a") == 0);
+
+	REQUIRE(c_five->read(buffer, 10) == 4);
+	REQUIRE(buffer->compare("bcd\n") == 0);
+
+	REQUIRE(c_five->read(buffer, 1) == 0);
+	REQUIRE(buffer->compare("") == 0);
+
 	file_five->close(c_five);
 }

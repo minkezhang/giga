@@ -23,6 +23,7 @@ namespace giga {
 		public:
 			File(std::string filename, std::string mode);
 			File(std::string filename, std::string mode, const std::shared_ptr<Config>& config);
+			~File();
 
 			std::map<int, std::shared_ptr<giga::ClientInfo>> get_client_list();
 

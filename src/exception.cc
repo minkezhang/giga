@@ -2,6 +2,34 @@
 
 #include "src/exception.h"
 
+giga::ToyFunction::ToyFunction(std::string func_name) {
+	this->func_name = func_name;
+}
+const char *giga::ToyFunction::what() const throw() {
+	std::stringstream buffer;
+	buffer << "ToyFunction(" << this->func_name << "): Method not fully supported '" << this->func_name << "()'";
+	return(buffer.str().c_str());
+}
+
+giga::InvalidOperation::InvalidOperation(std::string func_name, std::string msg) {
+	this->func_name = func_name;
+	this->msg = msg;
+}
+const char *giga::InvalidOperation::what() const throw() {
+	std::stringstream buffer;
+	buffer << "InvalidOperation(" << this->func_name << "): Invalid operation on '" << this->func_name << "()' -- '" << this->msg << "'";
+	return(buffer.str().c_str());
+}
+
+giga::NotImplemented::NotImplemented(std::string func_name) {
+	this->func_name = func_name;
+}
+const char *giga::NotImplemented::what() const throw() {
+	std::stringstream buffer;
+	buffer << "NotImplemented(" << this->func_name << "): Method not implemented '" << this->func_name << "()'";
+	return(buffer.str().c_str());
+}
+
 giga::FileNotFound::FileNotFound(std::string filename) {
 	this->filename = filename;
 }
