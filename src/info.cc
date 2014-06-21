@@ -49,3 +49,19 @@ void giga::ClientInfo::set_block_offset(giga::giga_size block_offset) {
 	}
 	this->block_offset = block_offset;
 }
+
+giga::BlockInfo::BlockInfo(const std::shared_ptr<giga::Block>& block) {
+	this->block = block;
+	this->n_access = 0;
+	this->lock = std::shared_ptr<std::mutex> (new std::mutex());
+}
+
+std::shared_ptr<giga::Block> giga::BlockInfo::get_block() { return(this->block); }
+giga::giga_size giga::BlockInfo::get_n_access() { return(this->n_access); }
+std::shared_ptr<std::mutex> giga::BlockInfo::get_lock() { return(this->lock); }
+
+void giga::BlockInfo::increment() {
+	this->lock->lock();
+	this->n_access++;
+	this->lock->unlock();
+}

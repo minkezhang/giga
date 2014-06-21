@@ -4,12 +4,14 @@
 
 #include <iostream>
 
+#include "libs/md5/md5.h"
+#include "src/crypto.h"
 #include "src/exception.h"
 
 #include "src/block.h"
 
 giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared_ptr<giga::Block>& prev, const std::shared_ptr<giga::Block>& next) {
-	this->id = rand(); // cf. tmpnam
+	this->id = rand(); // cf. tmpnam()
 	this->global_offset = global_offset;
 	this->size = size;
 	this->prev = prev;
@@ -21,9 +23,12 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 void giga::Block::load(std::string filename, std::string mode) {
 	this->block_lock.lock();
 	this->is_loaded = 1;
+
 	std::ostringstream path;
 	if(this->is_dirty) {
-		path << "/tmp/.giga_" << filename << "_" << this->id;
+		std::ostringstream buffer;
+		buffer << filename << "_" << this->id;
+		path << "/tmp/" << giga::Crypto::hash(buffer.str());
 	} else {
 		path << filename;
 	}
@@ -49,11 +54,23 @@ void giga::Block::load(std::string filename, std::string mode) {
 	this->block_lock.unlock();
 }
 
-void giga::Block::unload() {
-	throw(giga::NotImplemented("giga::Block::unload"));
-
+void giga::Block::unload(std::string filename) {
 	this->block_lock.lock();
+
+	if(this->is_dirty) {
+		std::ostringstream buffer;
+		std::ostringstream path;
+		buffer << filename << "_" << this->id;
+		path << "/tmp/" << giga::Crypto::hash(buffer.str());
+
+		// write to swap file
+		FILE *fp = fopen(path.str().c_str(), "w");
+		fputs(this->data.c_str(), fp);
+		fclose(fp);
+	}
+
 	this->is_loaded = 0;
+	this->data.assign("");
 	this->block_lock.unlock();
 }
 
@@ -72,6 +89,7 @@ giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<s
 
 giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer) {
 	throw(giga::NotImplemented("giga::Block::write"));
+
 	this->block_lock.lock();
 	this->is_dirty = 1;
 	this->global_offset = 0;
@@ -79,6 +97,7 @@ giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<
 	return(buffer->length());
 }
 
+giga::giga_size giga::Block::get_id() { return(this->id); }
 int giga::Block::get_is_loaded() { return(this->is_loaded); }
 int giga::Block::get_is_dirty() { return(this->is_dirty); }
 

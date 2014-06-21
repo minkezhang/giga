@@ -5,12 +5,14 @@
 #include <iostream>
 
 #include "src/exception.h"
+
 #include "src/file.h"
 
 giga::File::File(std::string filename, std::string mode, const std::shared_ptr<giga::Config>& config) {
 	this->filename = filename;
 	this->mode = mode;
 	this->n_clients = 0;
+	this->n_cache_entries = config->get_n_cache_entries();
 
 	FILE *fp = fopen(filename.c_str(), mode.c_str());
 	if(fp == NULL) {
@@ -25,6 +27,7 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	int result = stat(filename.c_str(), &stat_buf);
 
 	size_t page_size = config->get_page_size();
+
 	giga_size s = (result == 0) ? stat_buf.st_size : -1;
 
 	this->head_block = NULL;
@@ -109,12 +112,10 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	while(n < n_bytes) {
 		if(!info->get_block()->get_is_loaded()) {
-			try {
-				this->allocate(info->get_block());
-			} catch(giga::ToyFunction& e) {
-				std::cout << e.what() << std::endl;
-			}
+			this->allocate(info->get_block());
 		}
+
+		this->cache.at(info->get_block()->get_id()).increment();
 
 		offset = info->get_block()->read(info->get_block_offset(), buffer, (n_bytes - n));
 		n += offset;
@@ -192,8 +193,32 @@ void giga::File::unlock_clients() {
 }
 
 void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
-	// lock
-	// select block to unload
-	block->load(this->filename, this->mode);
-	throw(giga::ToyFunction("giga::File::allocate"));
+	this->cache_lock.lock();
+	try {
+		this->cache.at(block->get_id());
+	} catch(const std::out_of_range& e) {
+		if(this->cache.size() > this->n_cache_entries) {
+			// select block to unload
+			giga::giga_size cur_min = 0;
+			giga::giga_size target = 0;
+			for(std::map<giga::giga_size, giga::BlockInfo>::iterator it = this->cache.begin(); it != this->cache.end(); ++it) {
+				it->second.get_lock()->lock();
+				if((it->second.get_n_access() < cur_min) || (cur_min == 0)) {
+					cur_min = it->second.get_n_access();
+					target = it->first;
+				} else if(it->second.get_n_access() == 0) {
+					it->second.get_lock()->unlock();
+					target = it->first;
+					break;
+				}
+				it->second.get_lock()->unlock();
+			}
+			this->cache.at(target).get_block()->unload(this->filename);
+			this->cache.erase(target);
+		}
+
+		this->cache.insert(std::pair<int, giga::BlockInfo> (block->get_id(), giga::BlockInfo(block)));
+		block->load(this->filename, this->mode);
+	}
+	this->cache_lock.unlock();
 }

@@ -14,6 +14,7 @@ namespace giga {
 		public:
 			Block(giga_size global_offset, size_t size, const std::shared_ptr<Block>& prev, const std::shared_ptr<Block>& next);
 
+			giga_size get_id();
 			giga_size get_size();
 
 			void set_prev(const std::shared_ptr<Block>& prev);
@@ -23,7 +24,7 @@ namespace giga {
 			std::shared_ptr<Block> get_next();
 
 			void load(std::string filename, std::string mode);
-			void unload();
+			void unload(std::string filename);
 
 			int get_is_loaded();
 			int get_is_dirty();

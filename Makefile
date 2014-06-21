@@ -3,13 +3,13 @@ CC=g++
 # yadda yadda yadda beware -O3 optimizations and threading
 CFLAGS=-Wall -Werror -O3 -std=c++11 -g
 
-INCLUDE=-Iinclude/ -Iinclude/catch/include/
+INCLUDE=-Iinclude/ -Iinclude/libs/catch/include/
 
 # std::thread relies on the pthread lib          
 LIBS=-lpthread
 
 # remember to add all sources from subdirectories as well here
-SOURCES=src/*cc test/*cc
+SOURCES=src/*cc test/*cc libs/*/*cc
 
 OBJECTS=$(SOURCES:.cc=.o)
 

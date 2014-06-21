@@ -4,19 +4,6 @@
 #include <exception>
 
 namespace giga {
-	/**
-	 * functions which throw this signal their functionality is not yet complete
-	 *
-	 * functions which call such functions will need a try / catch to handle these functions
-	 */
-	class ToyFunction : public std::exception {
-		public:
-			ToyFunction(std::string func_name);
-			virtual const char *what() const throw();
-		private:
-			std::string func_name;
-	};
-
 	class NotImplemented : public std::exception {
 		public:
 			NotImplemented(std::string func_name);

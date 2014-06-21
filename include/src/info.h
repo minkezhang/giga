@@ -2,6 +2,7 @@
 #define _INFO_H
 
 #include <memory>
+#include <mutex>
 
 #include "src/block.h"
 #include "src/client.h"
@@ -10,6 +11,10 @@
 namespace giga {
 	class Client;
 	class Block;
+
+	/**
+	 * wrapper around client and associated housekeeping info
+	 */
 	class ClientInfo {
 		public:
 			ClientInfo(const std::shared_ptr<Client>& client, const std::shared_ptr<Block>& block);
@@ -29,6 +34,23 @@ namespace giga {
 			std::shared_ptr<Block> block;
 
 			giga_size block_offset;
+	};
+
+	/**
+	 * wrapper around a block loaded in memory and associated housekeeping info
+	 */
+	class BlockInfo {
+		public:
+			BlockInfo(const std::shared_ptr<Block>& block);
+			std::shared_ptr<Block> get_block();
+			giga_size get_n_access();
+			std::shared_ptr<std::mutex> get_lock();
+			void increment();
+
+		private:
+			std::shared_ptr<Block> block;
+			giga_size n_access;
+			std::shared_ptr<std::mutex> lock;
 	};
 }
 
