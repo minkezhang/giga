@@ -21,7 +21,6 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 }
 
 void giga::Block::load(std::string filename, std::string mode) {
-	this->block_lock.lock();
 	this->is_loaded = 1;
 
 	std::ostringstream path;
@@ -51,12 +50,9 @@ void giga::Block::load(std::string filename, std::string mode) {
 	this->data.assign(std::string(data, this->size));
 
 	free((void *) data);
-	this->block_lock.unlock();
 }
 
 void giga::Block::unload(std::string filename) {
-	this->block_lock.lock();
-
 	if(this->is_dirty) {
 		std::ostringstream buffer;
 		std::ostringstream path;
@@ -71,11 +67,9 @@ void giga::Block::unload(std::string filename) {
 
 	this->is_loaded = 0;
 	this->data.assign("");
-	this->block_lock.unlock();
 }
 
 giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
-	this->block_lock.lock();
 	if(!this->is_loaded) {
 		throw(giga::InvalidOperation("giga::Block::read", "attempted to read an unloaded block"));
 	}
@@ -83,17 +77,14 @@ giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<s
 	size_t bytes_read = ((this->size - start) < (size_t) n_bytes) ? this->size - start : (size_t) n_bytes;
 	buffer->append(this->data.substr(start, bytes_read));
 
-	this->block_lock.unlock();
 	return(bytes_read);
 }
 
 giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer) {
 	throw(giga::NotImplemented("giga::Block::write"));
 
-	this->block_lock.lock();
 	this->is_dirty = 1;
 	this->global_offset = 0;
-	this->block_lock.unlock();
 	return(buffer->length());
 }
 

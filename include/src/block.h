@@ -44,8 +44,6 @@ namespace giga {
 			std::shared_ptr<Block> next;
 
 			std::string data;
-
-			std::mutex block_lock;
 	};
 }
 

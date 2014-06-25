@@ -60,8 +60,4 @@ std::shared_ptr<giga::Block> giga::BlockInfo::get_block() { return(this->block);
 giga::giga_size giga::BlockInfo::get_n_access() { return(this->n_access); }
 std::shared_ptr<std::mutex> giga::BlockInfo::get_lock() { return(this->lock); }
 
-void giga::BlockInfo::increment() {
-	this->lock->lock();
-	this->n_access++;
-	this->lock->unlock();
-}
+void giga::BlockInfo::increment() { this->n_access++; }
