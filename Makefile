@@ -1,6 +1,7 @@
 CC=g++
 
 # yadda yadda yadda beware -O3 optimizations and threading
+# -Wl,--no-as-need -- cf. http://bit.ly/ToQTcC
 CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed
 
 INCLUDE=-Iinclude/ -Iinclude/libs/catch/include/
