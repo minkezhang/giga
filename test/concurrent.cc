@@ -37,7 +37,7 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 }
 
 TEST_CASE("concurrent|read") {
-	int n_threads = 5;
+	int n_threads = 10;
 	std::shared_ptr<std::string> buffer (new std::string);
 	std::vector<std::thread> threads;
 	std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2, 0))));

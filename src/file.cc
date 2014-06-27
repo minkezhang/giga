@@ -140,24 +140,26 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			this->cache.at(block->get_id()).get_lock()->lock();
 		} catch(const std::out_of_range& e) {
 			// this->allocate() automatically locks the cache line
-			this->allocate(info->get_block());
+			this->allocate(block);
 		}
 
-		this->cache.at(info->get_block()->get_id()).increment();
+		this->cache.at(block->get_id()).increment();
 
-		offset = info->get_block()->read(info->get_block_offset(), buffer, (n_bytes - n));
+		offset = block->read(info->get_block_offset(), buffer, (n_bytes - n));
 		n += offset;
 
 		// a read ended within the same block
-		if(info->get_block_offset() + offset < info->get_block()->get_size()) {
+		if(info->get_block_offset() + offset < block->get_size()) {
 			info->set_block_offset(info->get_block_offset() + offset);
 		// a read ended outside the starting block
-		} else if(info->get_block()->get_next() != NULL) {
-			info->set_block(info->get_block()->get_next());
+		} else if(block->get_next() != NULL) {
+			info->set_block(block->get_next());
 			info->set_block_offset(0);
 		// set EOF
 		} else {
 			info->set_block_offset(info->get_block_offset() + offset);
+
+			this->cache.at(block->get_id()).get_lock()->unlock();
 			break;
 		}
 
