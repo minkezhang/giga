@@ -69,9 +69,24 @@ std::map<int, std::shared_ptr<giga::ClientInfo>> giga::File::get_client_list() {
  * lock the client list while doing so
  */
 giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& client) {
-	this->lock_clients();
+	// cannot make changes to the document while calculating global position
+	client->lock_client();
+
+	this->cache_lock.lock();
+
+	for(std::map<giga::giga_size, giga::BlockInfo>::iterator it = this->cache.begin(); it != this->cache.end(); ++it) {
+		it->second.get_lock()->lock();
+	}
+
 	giga_size result = this->client_list[client->get_id()]->get_global_position();
-	this->unlock_clients();
+
+	for(std::map<giga::giga_size, giga::BlockInfo>::iterator it = this->cache.begin(); it != this->cache.end(); ++it) {
+		it->second.get_lock()->unlock();
+	}
+
+	this->cache_lock.unlock();
+	client->unlock_client();
+
 	return(result);
 }
 
@@ -93,11 +108,16 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
  * resets buffer to ""
  */
 giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
+	if(client->get_is_closed()) {
+		std::cout << "error, is closed" << std::endl;
+	}
+
 	// client reads sequentially
 	client->lock_client();
 
 	buffer->assign("");
 	if(this->head_block == NULL) {
+		client->unlock_client();
 		return(0);
 	}
 
@@ -105,6 +125,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	// EOF check
 	if(info->get_block_offset() == info->get_block()->get_size()) {
+		client->unlock_client();
 		return(0);
 	}
 
@@ -168,17 +189,27 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 }
 
 std::shared_ptr<giga::Client> giga::File::open() {
-	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), this->n_clients++));
-	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(c, this->head_block));
 	this->client_list_lock.lock();
-	this->client_list[c->get_id()] = c_info;
+
+	std::shared_ptr<giga::Client> c;
+	c = std::shared_ptr<giga::Client> (new giga::Client(this->shared_from_this(), this->n_clients));
+	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(c, this->head_block));
+	this->client_list[this->n_clients] = c_info;
+	c_info.reset();
+
+	this->n_clients++;
 	this->client_list_lock.unlock();
 	return(c);
 }
 
 void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 	this->client_list_lock.lock();
+	client->lock_client();
+
+	client->set_is_closed();
 	this->client_list.erase(client->get_id());
+
+	client->unlock_client();
 	this->client_list_lock.unlock();
 }
 
@@ -243,4 +274,14 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 
 	this->cache.at(block->get_id()).get_lock()->lock();
 	this->cache_lock.unlock();
+}
+
+int giga::File::get_n_clients() {
+	int n;
+	this->client_list_lock.lock();
+
+	n = this->client_list.size();
+
+	this->client_list_lock.unlock();
+	return(n);
 }

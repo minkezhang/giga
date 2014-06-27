@@ -27,8 +27,12 @@ namespace giga {
 			void lock_client();
 			void unlock_client();
 
+			int get_is_closed();
+			void set_is_closed();
+
 		private:
 			int id;
+			int is_closed;
 			std::shared_ptr<File> file;
 			std::mutex client_lock;
 	};

@@ -5,6 +5,12 @@
 giga::Client::Client(const std::shared_ptr<giga::File>& file, int id) {
 	this->file = file;
 	this->id = id;
+	this->is_closed = 0;
+}
+
+int giga::Client::get_is_closed() { return(this->is_closed); }
+void giga::Client::set_is_closed() {
+	this->is_closed = 1;
 }
 
 int giga::Client::get_id() { return(this->id); }
@@ -14,7 +20,8 @@ giga::giga_size giga::Client::read(const std::shared_ptr<std::string>& buffer, g
 }
 
 giga::giga_size giga::Client::get_pos() {
-	return(this->file->get_client_pos(this->shared_from_this())); }
+	return(this->file->get_client_pos(this->shared_from_this()));
+}
 
 giga::giga_size giga::Client::seek(giga::giga_size global_pos) {
 	return(this->file->seek(this->shared_from_this(), global_pos));

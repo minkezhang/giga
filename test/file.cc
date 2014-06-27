@@ -24,3 +24,4 @@ TEST_CASE("file|initialization") {
 	file->close(d);
 	REQUIRE(file->get_client_list().size() == 0);
 }
+

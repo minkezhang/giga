@@ -18,15 +18,21 @@ std::shared_ptr<giga::Block> giga::ClientInfo::get_block() { return(this->block)
 const std::shared_ptr<giga::Client>& giga::ClientInfo::get_client() { return(this->client); }
 
 giga::giga_size giga::ClientInfo::get_block_offset() { return(this->block_offset); }
+
 giga::giga_size giga::ClientInfo::get_global_position() {
 	std::shared_ptr<giga::Block> block = this->block;
 
 	if(block == NULL) { return(0); }
+
 	while(block->get_prev() != NULL) { block = block->get_prev(); }
+
 	int global_pos = 0;
-	while(block != this->block->get_next()) {
+
+	while(block != this->block) {
 		global_pos += block->get_size();
+		block = block->get_next();
 	}
+
 	return(global_pos + this->block_offset);
 }
 

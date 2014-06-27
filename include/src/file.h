@@ -37,9 +37,12 @@ namespace giga {
 			std::shared_ptr<Client> open();
 			void close(const std::shared_ptr<Client>& client);
 
+			int get_n_clients();
+
 			void save();
 
 		private:
+			// unique ID tracker
 			int n_clients;
 
 			std::string filename;
