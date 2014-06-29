@@ -61,7 +61,7 @@ namespace giga {
 			void unlock_clients();
 
 			// list of blocks whose data is loaded
-			std::map<giga_size, BlockInfo> cache;
+			std::map<giga_size, std::shared_ptr<BlockInfo>> cache;
 			std::mutex cache_lock;
 			size_t n_cache_entries;
 	};

@@ -25,5 +25,8 @@ $(EXECUTABLE): $(OBJECTS)
 test: clean $(EXECUTABLE)
 	./$(EXECUTABLE) > results.log
 
+concurrent: clean $(EXECUTABLE)
+	while true; do ./$(EXECUTABLE); sleep 1; done;
+
 clean:
 	rm -f $(EXECUTABLE) *.o *.log
