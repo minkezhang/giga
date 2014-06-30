@@ -117,7 +117,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	client->lock_client();
 
 	if(client->get_is_closed()) {
-		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client");
+		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client"));
 	}
 
 	buffer->assign("");

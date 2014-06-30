@@ -6,6 +6,7 @@
 
 #include "src/client.h"
 #include "src/config.h"
+#include "src/exception.h"
 #include "src/file.h"
 
 TEST_CASE("block|read") {
@@ -37,4 +38,5 @@ TEST_CASE("block|read") {
 	REQUIRE(buffer->compare("") == 0);
 
 	file_five->close(c_five);
+	REQUIRE_THROWS_AS(c_five->read(buffer, 1), giga::InvalidOperation);
 }
