@@ -1,3 +1,6 @@
 [submodule "include/libs/catch"]
 	path = include/libs/catch
 	url = https://github.com/philsquared/Catch.git
+[submodule "external/stacktrace"]
+	path = external/stacktrace
+	url = https://github.com/cripplet/stacktrace.git
