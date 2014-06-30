@@ -45,21 +45,11 @@ namespace giga {
 			std::shared_ptr<Block> get_block();
 			giga_size get_n_access();
 
-			void lock();
-			void unlock();
 			void increment();
 
 		private:
-			/**
-			 * locks in object means object is not copyable
-			 * cf. http://bit.ly/Vyyc8o
-			 */
-			BlockInfo(const BlockInfo& other) = delete;
-			BlockInfo& operator=(const BlockInfo&) = delete;
-
 			std::shared_ptr<Block> block;
 			giga_size n_access;
-			std::mutex block_info_lock;
 	};
 }
 

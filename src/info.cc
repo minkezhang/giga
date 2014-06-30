@@ -64,7 +64,4 @@ giga::BlockInfo::BlockInfo(const std::shared_ptr<giga::Block>& block) {
 std::shared_ptr<giga::Block> giga::BlockInfo::get_block() { return(this->block); }
 giga::giga_size giga::BlockInfo::get_n_access() { return(this->n_access); }
 
-void giga::BlockInfo::lock() { this->block_info_lock.lock(); }
-void giga::BlockInfo::unlock() { this->block_info_lock.unlock(); }
-
 void giga::BlockInfo::increment() { this->n_access++; }

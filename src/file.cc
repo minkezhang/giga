@@ -15,6 +15,9 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	this->mode = mode;
 	this->n_clients = 0;
 	this->n_cache_entries = config->get_n_cache_entries();
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.push_back(std::shared_ptr<std::mutex> (new std::mutex()));
+	}
 
 	FILE *fp = fopen(filename.c_str(), mode.c_str());
 	if(fp == NULL) {
@@ -76,14 +79,14 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 
 	this->cache_lock.lock();
 
-	for(std::map<giga::giga_size, std::shared_ptr<giga::BlockInfo>>::iterator it = this->cache.begin(); it != this->cache.end(); ++it) {
-		it->second->lock();
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->lock();
 	}
 
 	giga_size result = this->client_list[client->get_id()]->get_global_position();
 
-	for(std::map<giga::giga_size, std::shared_ptr<giga::BlockInfo>>::iterator it = this->cache.begin(); it != this->cache.end(); ++it) {
-		it->second->unlock();
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->unlock();
 	}
 
 	this->cache_lock.unlock();
@@ -114,7 +117,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	client->lock_client();
 
 	if(client->get_is_closed()) {
-		std::cout << "error, is closed" << std::endl;
+		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client");
 	}
 
 	buffer->assign("");
@@ -138,18 +141,13 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		// backup copy of the block being referenced in the cache
 		std::shared_ptr<giga::Block> block = info->get_block();
 
-		int success = 0;
-		while(!success) {
-			try {
-				std::cout << "locking" << std::endl;
-				this->cache.at(block->get_id())->lock();
-				std::cout << "unlocking" << std::endl;
-				success = 1;
-			} catch(const std::out_of_range& e) {
-				// this->allocate() automatically locks the cache line
-				this->allocate(block);
-				std::cout << "allocated" << std::endl;
-			}
+		try {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+			this->cache.at(block->get_id());
+		} catch(const std::out_of_range& e) {
+			// this->allocate() automatically locks the cache line
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			this->allocate(block);
 		}
 
 		try {
@@ -172,22 +170,11 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		// set EOF
 		} else {
 			info->set_block_offset(info->get_block_offset() + offset);
-
-			try {
-				this->cache.at(block->get_id())->unlock();
-			} catch(const std::out_of_range& e) {
-				std::cout << "out of range in read:unlock EOF" << std::endl;
-				exit(-1);
-			}
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 			break;
 		}
 
-		try {
-			this->cache.at(block->get_id())->unlock();
-		} catch(const std::out_of_range& e) {
-			std::cout << "out of range in read:unlock gen-purpose" << std::endl;
-			exit(-1);
-		}
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 		block.reset();
 	}
 
@@ -273,7 +260,7 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 	 *	ensures that the block isn't already loaded before proceeding
 	 */
 	try {
-		this->cache.at(block->get_id())->lock();
+		this->cache.at(block->get_id());
 	} catch(const std::out_of_range& e) {
 		if(this->cache.size() > this->n_cache_entries) {
 			// select block to unload
@@ -281,26 +268,25 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 			giga::giga_size target = 0;
 			for(std::map<giga::giga_size, std::shared_ptr<giga::BlockInfo>>::iterator it = this->cache.begin(); it != this->cache.end(); ++it) {
 				// finish all pending read and writes on the block
-				it->second->lock();
+				size_t iterator_id = it->second->get_block()->get_id() % this->n_cache_entries;
+				this->cache_entry_locks.at(iterator_id)->lock();
 				if((it->second->get_n_access() < cur_min) || (cur_min == 0)) {
 					cur_min = it->second->get_n_access();
 					target = it->first;
 				} else if(it->second->get_n_access() == 0) {
 					target = it->first;
-					it->second->unlock();
+					this->cache_entry_locks.at(iterator_id)->unlock();
 					break;
 				}
-				it->second->unlock();
+				this->cache_entry_locks.at(iterator_id)->unlock();
 			}
-			std::shared_ptr<giga::BlockInfo> block_info = this->cache.at(target);
-			block_info->lock();
-			block_info->get_block()->unload(this->filename);
-			std::cout << std::this_thread::get_id() << ") erasing block_id == " << target << std::endl;
+			this->cache_entry_locks.at(target % this->n_cache_entries)->lock();
+			this->cache.at(target)->get_block()->unload(this->filename);
 			this->cache.erase(target);
-			block_info->unlock();
-			block_info.reset();
+			this->cache_entry_locks.at(target % this->n_cache_entries)->unlock();
 		}
 
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
 		block->load(this->filename, this->mode);
 		this->cache.insert(std::pair<int, std::shared_ptr<giga::BlockInfo>> (block->get_id(), std::shared_ptr<giga::BlockInfo> (new giga::BlockInfo(block))));
 	}

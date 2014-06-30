@@ -63,6 +63,9 @@ namespace giga {
 			// list of blocks whose data is loaded
 			std::map<giga_size, std::shared_ptr<BlockInfo>> cache;
 			std::mutex cache_lock;
+			// one lock per cache entry -- static array of size n_cache_entries
+			std::vector<std::shared_ptr<std::mutex>> cache_entry_locks;
+
 			size_t n_cache_entries;
 	};
 

@@ -23,7 +23,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 # remember to run unit tests
 test: clean $(EXECUTABLE)
-	./$(EXECUTABLE) > results.log
+	./$(EXECUTABLE) | tee results.log
 
 concurrent: clean $(EXECUTABLE)
 	while true; do ./$(EXECUTABLE); sleep 1; done;

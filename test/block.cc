@@ -21,7 +21,7 @@ TEST_CASE("block|read") {
 
 	file_empty->close(c_empty);
 
-	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2, 0))));
+	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2, 1))));
 	std::shared_ptr<giga::Client> c_five = file_five->open();
 
 	REQUIRE(c_five->read(buffer, 0) == 0);
@@ -38,4 +38,3 @@ TEST_CASE("block|read") {
 
 	file_five->close(c_five);
 }
-

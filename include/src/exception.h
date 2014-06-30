@@ -2,6 +2,7 @@
 #define _EXCEPTION_H
 
 #include <exception>
+#include <string>
 
 namespace giga {
 	class NotImplemented : public std::exception {
