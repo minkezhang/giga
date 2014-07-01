@@ -9,7 +9,7 @@ namespace giga {
 		public:
 			NotImplemented(std::string func_name);
 			virtual const char *what() const throw();
-		private:
+		protected:
 			std::string func_name;
 	};
 
@@ -20,16 +20,22 @@ namespace giga {
 		public:
 			InvalidOperation(std::string func_name, std::string msg);
 			virtual const char *what() const throw();
-		private:
+		protected:
 			std::string func_name;
 			std::string msg;
+	};
+
+	class RuntimeError : public InvalidOperation {
+		public:
+			RuntimeError(std::string func_name, std::string msg);
+			virtual const char *what() const throw();
 	};
 
 	class FileNotFound : public std::exception {
 		public:
 			FileNotFound(std::string filename);
 			virtual const char *what() const throw();
-		private:
+		protected:
 			std::string filename;
 	};
 
@@ -37,7 +43,7 @@ namespace giga {
 		public:
 			InvalidFileOperation(std::string filename, std::string mode, int error_type);
 			virtual const char *what() const throw();
-		private:
+		protected:
 			std::string filename;
 			std::string mode;
 			int error_type;
