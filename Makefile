@@ -29,7 +29,7 @@ test: clean $(EXECUTABLE)
 	./$(EXECUTABLE) | tee results.log
 
 concurrent: clean $(EXECUTABLE)
-	while true; do ./$(EXECUTABLE); sleep 1; done;
+	while true; do ./$(EXECUTABLE); done;
 
 clean:
 	rm -f $(EXECUTABLE) *.o *.log

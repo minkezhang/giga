@@ -13,20 +13,17 @@ giga::InvalidOperation::InvalidOperation(std::string func_name, std::string msg)
 }
 const char *giga::InvalidOperation::what() const throw() {
 	std::stringstream buffer;
-	buffer << "InvalidOperation(" << this->func_name << "): Invalid operation on '" << this->func_name << "()' -- '" << this->msg << "'";
+	buffer << "InvalidOperation(" << this->func_name << "): Invalid operation on " << this->func_name << "() -- " << this->msg;
 	return(buffer.str().c_str());
 }
 
 giga::RuntimeError::RuntimeError(std::string func_name, std::string msg) {
-	std::stringstream buffer;
-	stacktrace::call_stack trace = stacktrace::call_stack();
-	buffer << trace.to_string();
 	this->func_name = func_name;
-	this->msg = buffer.str();
+	this->msg = msg;
 }
 const char *giga::RuntimeError::what() const throw() {
 	std::stringstream buffer;
-	buffer << "RuntimeError(" << this->func_name << "): '" << this->func_name << "()' -- '" << this->msg << "'";
+	buffer << "RuntimeError(" << this->func_name << "): " << this->func_name << "() -- " << this->msg;
 	return(buffer.str().c_str());
 }
 
@@ -35,7 +32,7 @@ giga::NotImplemented::NotImplemented(std::string func_name) {
 }
 const char *giga::NotImplemented::what() const throw() {
 	std::stringstream buffer;
-	buffer << "NotImplemented(" << this->func_name << "): Method not implemented '" << this->func_name << "()'";
+	buffer << "NotImplemented(" << this->func_name << "): Method not implemented " << this->func_name << "()";
 	return(buffer.str().c_str());
 }
 
@@ -44,7 +41,7 @@ giga::FileNotFound::FileNotFound(std::string filename) {
 }
 const char *giga::FileNotFound::what() const throw() {
 	std::stringstream buffer;
-	buffer << "FileNotFound(" << this->filename << "): Cannot find file '" << this->filename << "'";
+	buffer << "FileNotFound(" << this->filename << "): Cannot find file " << this->filename;
 	return(buffer.str().c_str());
 }
 
