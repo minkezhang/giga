@@ -1,5 +1,7 @@
 #include <sstream>
 
+#include <iostream>
+
 #include "libs/stacktrace/call_stack.hpp"
 #include "libs/stacktrace/stack_exception.hpp"
 
@@ -15,12 +17,16 @@ const char *giga::InvalidOperation::what() const throw() {
 	return(buffer.str().c_str());
 }
 
-giga::RuntimeError::RuntimeError(std::string func_name, std::string msg) : giga::InvalidOperation(func_name, msg) {}
-const char *giga::RuntimeError::what() const throw() {
-	stacktrace::call_stack trace = stacktrace::call_stack();
+giga::RuntimeError::RuntimeError(std::string func_name, std::string msg) {
 	std::stringstream buffer;
-	buffer << "RuntimeError(" << this->func_name << "): A runtime error has occured -- '" << this->func_name << "()' -- '" << this->msg << "'";
-	buffer << std::endl << trace.to_string();
+	stacktrace::call_stack trace = stacktrace::call_stack();
+	buffer << trace.to_string();
+	this->func_name = func_name;
+	this->msg = buffer.str();
+}
+const char *giga::RuntimeError::what() const throw() {
+	std::stringstream buffer;
+	buffer << "RuntimeError(" << this->func_name << "): '" << this->func_name << "()' -- '" << this->msg << "'";
 	return(buffer.str().c_str());
 }
 

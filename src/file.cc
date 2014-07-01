@@ -153,8 +153,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		try {
 			this->cache.at(block->get_id())->increment();
 		} catch(const std::out_of_range& e) {
-			std::cout << std::this_thread::get_id() << ") out of range in read, block_id == " << block->get_id() << " block addr: " << block << std::endl << std::endl << std::endl;
-			exit(-1);
+			throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while incrementing block access count"));
 		}
 
 		offset = block->read(info->get_block_offset(), buffer, (n_bytes - n));

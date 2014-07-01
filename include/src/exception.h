@@ -25,10 +25,13 @@ namespace giga {
 			std::string msg;
 	};
 
-	class RuntimeError : public InvalidOperation {
+	class RuntimeError : public std::exception {
 		public:
 			RuntimeError(std::string func_name, std::string msg);
 			virtual const char *what() const throw();
+		protected:
+			std::string func_name;
+			std::string msg;
 	};
 
 	class FileNotFound : public std::exception {
