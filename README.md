@@ -19,7 +19,7 @@ Current Features
 
 Planned Features
 ----
-* `overwrite(buf)` (cf. `fwrite()`), `insert(buf)`, and `delete(n)` write modes
+* `overwrite(buf)` (cf. `fwrite(..., buf, ...)`), `insert(buf)`, and `delete(n)` write modes
 * `file.save()`
 * possible network integration
 
