@@ -20,9 +20,13 @@ Current Features
 Planned Features
 ----
 * `overwrite(buf)` (cf. `fwrite(..., buf, ...)`), `insert(buf)`, and `delete(n)` write modes
-* `file.save()`
+* `save()`
 * possible network integration
 * performance testing
+
+Known Bugs
+----
+* memory leak when calling file destructor, due to linked list
 
 Installation
 ----
