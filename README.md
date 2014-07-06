@@ -17,6 +17,12 @@ Current Features
 * unit tests covering concurrency usage
 * concurrent and sequential reads implemented
 
+Planned Features
+----
+* `overwrite(buf)` (`fwrite()`), `insert(buf)`, and `delete(n)` write modes
+* `file.save()`
+* possible network integration
+
 Installation
 ----
 
@@ -25,3 +31,10 @@ git clone --recursive https://github.com/cripplet/giga.git
 ```
 
 cf. `test/concurrent.cc` for usage example
+
+Testing
+----
+
+```
+make test
+```
