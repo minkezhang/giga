@@ -38,25 +38,30 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 
 TEST_CASE("concurrent|read") {
 	int n_threads = 20;
-	std::shared_ptr<std::string> buffer (new std::string);
-	std::vector<std::thread> threads;
-	std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2, 1))));
+	int n_attempts = 5;
 
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
 
-	for(int i = 0; i < n_threads; i++) {
-		threads.push_back(std::thread (aux_read_test_worker, file, result));
-	}
+	for(int attempt = 0; attempt < n_attempts; attempt++) {
+		std::shared_ptr<std::string> buffer (new std::string);
+		std::vector<std::thread> threads;
+		std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2, 1))));
 
-	std::this_thread::sleep_for(std::chrono::seconds(1));
-	while(file->get_n_clients()) {
-		// cf. http://bit.ly/1pLvXct
+		for(int i = 0; i < n_threads; i++) {
+			threads.push_back(std::thread (aux_read_test_worker, file, result));
+		}
+
 		std::this_thread::sleep_for(std::chrono::seconds(1));
-	}
+		while(file->get_n_clients()) {
+			// cf. http://bit.ly/1pLvXct
+			std::this_thread::sleep_for(std::chrono::seconds(1));
+		}
 
 
-	for(int i = 0; i < n_threads; i++) {
-		threads.at(i).join();
+		for(int i = 0; i < n_threads; i++) {
+			threads.at(i).join();
+		}
 	}
-	REQUIRE(*result == n_threads);
+
+	REQUIRE(*result == n_attempts * n_threads);
 }

@@ -28,8 +28,5 @@ $(EXECUTABLE): $(OBJECTS)
 test: clean $(EXECUTABLE)
 	./$(EXECUTABLE) | tee results.log
 
-concurrent: clean $(EXECUTABLE)
-	while true; do ./$(EXECUTABLE); done;
-
 clean:
 	rm -f $(EXECUTABLE) *.o *.log
