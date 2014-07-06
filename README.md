@@ -8,8 +8,9 @@ Overview
 
 `giga` is a concurrent file I/O library which seeks to ameliorate large-file memory problems.
 
-Internally, a file is represented in memory with a linked-list bit-array keeping track of dirty blocks of data. On file save, all the dirty bits are then written to the 
-file; intermediate states of dirty file portions are stored on disk in `/tmp/`.
+Internally, a file is represented in memory with a linked-list bit-array keeping track of dirty blocks of data. On file save, all the dirty blocks are then written to 
+the file; intermediate states of dirty blocks are stored on disk in `/tmp/`. To keep the memory footprint small, `giga` only keeps recently-accessed blocks in RAM with a 
+LRU allocation policy.
 
 Current Features
 ----

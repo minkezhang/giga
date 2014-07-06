@@ -279,6 +279,12 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 					target = it->first;
 					if(iterator_id != block_cache_pos) { this->cache_entry_locks.at(iterator_id)->unlock(); }
 					break;
+				/**
+				 * prevent run-away accesses
+				 *	cf. http://bit.ly/1n6cYZD (second-chance algorithm)
+				 */
+				} else {
+					it->second->decrement();
 				}
 				if(iterator_id != block_cache_pos) { this->cache_entry_locks.at(iterator_id)->unlock(); }
 			}

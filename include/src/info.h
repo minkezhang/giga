@@ -46,6 +46,7 @@ namespace giga {
 			giga_size get_n_access();
 
 			void increment();
+			void decrement();
 
 		private:
 			std::shared_ptr<Block> block;
