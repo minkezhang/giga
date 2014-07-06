@@ -14,6 +14,7 @@ least-used allocation policy (generalized second-chance).
 
 Current Features
 ----
+* object-oriented file framework
 * unit tests covering concurrency usage
 * concurrent and sequential reads implemented
 
