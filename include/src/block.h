@@ -1,6 +1,7 @@
 #ifndef _BLOCK_H
 #define _BLOCK_H
 
+#include <atomic>
 #include <cstdlib>
 #include <memory>
 #include <mutex>
@@ -17,11 +18,14 @@ namespace giga {
 			giga_size get_id();
 			giga_size get_size();
 
-			void set_prev(const std::shared_ptr<Block>& prev);
-			void set_next(const std::shared_ptr<Block>& next);
+			void set_prev_unsafe(const std::shared_ptr<Block>& prev);
+			void set_next_unsafe(const std::shared_ptr<Block>& next);
 
-			std::shared_ptr<Block> get_prev();
-			std::shared_ptr<Block> get_next();
+			std::shared_ptr<Block> get_prev_unsafe();
+			std::shared_ptr<Block> get_next_unsafe();
+
+			std::shared_ptr<Block> get_prev_safe();
+			std::shared_ptr<Block> get_next_safe();
 
 			void load(std::string filename, std::string mode);
 			void unload(std::string filename);
@@ -39,6 +43,10 @@ namespace giga {
 
 			int is_dirty;
 			int is_loaded;
+
+			// cf. http://bit.ly/VTIjF0
+			std::atomic<bool> prev_lock;
+			std::atomic<bool> next_lock;
 
 			std::shared_ptr<Block> prev;
 			std::shared_ptr<Block> next;

@@ -82,7 +82,7 @@ public void Node::insert(Node h, Node t) {
 }
 
 /**
- * guarded access -- same logic for get_prev()
+ * guarded access -- same logic for get_prev_safe()
  *	these should be called by external functions and therefore must WAIT for pending inserts()
  */
 public Node Node::get_next_safe() {
@@ -91,17 +91,12 @@ public Node Node::get_next_safe() {
 }
 
 /**
- * alias for get_next_safe()
- */
-public Node Node::get_next() { return(this->get_next_safe()); }
-
-/**
  * NO EXTERNAL FUNCTION can set next and prev nodes by acquiring the locks
  */
 public void Node::set_next_safe(Node n) = delete;
 ```
 
-The order of acquiring the locks is important in `Node::append` -- we are extending the singly-linked link list hand-over-hand locking protocol to a doubly-linked list. 
+The order of acquiring the locks is important in `Node::insert` -- we are extending the singly-linked link list hand-over-hand locking protocol to a doubly-linked list. 
 The way in which we lock is strictly ordered and symmetrical across all nodes, thereby eliminating deadlock.
 
 Because `get` and `set` operations are trivial, we can use spin-locks here (implemented in `Node::lock` and `Node::unlock`), which can be implemented using 

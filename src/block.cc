@@ -18,6 +18,8 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 	this->next = next;
 	this->is_dirty = 0;
 	this->is_loaded = 0;
+	this->prev_lock = false;
+	this->next_lock = false;
 }
 
 void giga::Block::load(std::string filename, std::string mode) {
@@ -67,6 +69,9 @@ void giga::Block::unload(std::string filename) {
 
 	this->is_loaded = 0;
 	this->data.assign("");
+	// free memory
+	//	cf. http://bit.ly/1spckXq
+	this->data.reserve(0);
 }
 
 giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
@@ -94,8 +99,24 @@ int giga::Block::get_is_dirty() { return(this->is_dirty); }
 
 giga::giga_size giga::Block::get_size() { return(this->size); }
 
-std::shared_ptr<giga::Block> giga::Block::get_prev() { return(this->prev); }
-std::shared_ptr<giga::Block> giga::Block::get_next() { return(this->next); }
+// linked list maintenance
 
-void giga::Block::set_prev(const std::shared_ptr<giga::Block>& prev) { this->prev = prev; }
-void giga::Block::set_next(const std::shared_ptr<giga::Block>& next) { this->next = next; }
+std::shared_ptr<giga::Block> giga::Block::get_prev_unsafe() { return(this->prev); }
+std::shared_ptr<giga::Block> giga::Block::get_next_unsafe() { return(this->next); }
+
+std::shared_ptr<giga::Block> giga::Block::get_prev_safe() {
+	while(this->prev_lock.exchange(true)) {}
+	std::shared_ptr<giga::Block> val = this->get_prev_unsafe();
+	this->prev_lock = false;
+	return(val);
+}
+
+std::shared_ptr<giga::Block> giga::Block::get_next_safe() {
+	while(this->next_lock.exchange(true)) {}
+	std::shared_ptr<giga::Block> val = this->get_next_unsafe();
+	this->next_lock = false;
+	return(val);
+}
+
+void giga::Block::set_prev_unsafe(const std::shared_ptr<giga::Block>& prev) { this->prev = prev; }
+void giga::Block::set_next_unsafe(const std::shared_ptr<giga::Block>& next) { this->next = next; }

@@ -57,8 +57,8 @@ namespace giga {
 
 			void allocate(const std::shared_ptr<Block>& block);
 
-			void lock_clients();
-			void unlock_clients();
+			void pause();
+			void unpause();
 
 			// list of blocks whose data is loaded
 			std::map<giga_size, std::shared_ptr<BlockInfo>> cache;

@@ -40,8 +40,8 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 		size_t size = (s - global_pos > (giga_size) page_size) ? page_size : (s - global_pos);
 		std::shared_ptr<giga::Block> block (new giga::Block(global_pos, size, this->head_block, NULL));
 			if(this->head_block != NULL) {
-			this->head_block->set_next(block);
-		}
+				this->head_block->set_next_unsafe(block);
+			}
 		this->head_block = block;
 		// release unused references
 		block.reset();
@@ -49,8 +49,8 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 
 	// reverse back up from end of file to the beginning
 	if(this->head_block != NULL) {
-		while(this->head_block->get_prev() != NULL) {
-			this->head_block = this->head_block->get_prev();
+		while(this->head_block->get_prev_safe() != NULL) {
+			this->head_block = this->head_block->get_prev_safe();
 		}
 	}
 }
@@ -59,11 +59,11 @@ giga::File::File(std::string filename, std::string mode) : giga::File::File(file
 
 giga::File::~File() {
 	while(this->head_block) {
-		if(this->head_block->get_prev()) {
-			this->head_block->get_prev()->get_next().reset();
-			this->head_block->get_prev().reset();
+		if(this->head_block->get_prev_safe()) {
+			this->head_block->get_prev_safe()->get_next_safe().reset();
+			this->head_block->get_prev_safe().reset();
 		}
-		this->head_block = this->head_block->get_next();
+		this->head_block = this->head_block->get_next_safe();
 	}
 }
 
@@ -101,9 +101,9 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  */
 giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
 	throw(giga::NotImplemented("giga::File::seek"));
-	this->lock_clients();
+	this->pause();
 	giga_size result = 0;
-	this->unlock_clients();
+	this->unpause();
 	return(result);
 }
 
@@ -163,8 +163,8 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		if(info->get_block_offset() + offset < block->get_size()) {
 			info->set_block_offset(info->get_block_offset() + offset);
 		// a read ended outside the starting block
-		} else if(block->get_next() != NULL) {
-			info->set_block(block->get_next());
+		} else if(block->get_next_safe() != NULL) {
+			info->set_block(block->get_next_safe());
 			info->set_block_offset(0);
 		// set EOF
 		} else {
@@ -236,12 +236,12 @@ void giga::File::save() {
  *
  * "stop-the-world" updates need to call this (e.g. File::save())
  */
-void giga::File::lock_clients() {
+void giga::File::pause() {
 	this->client_list_lock.lock();
 	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->lock_client(); }
 }
 
-void giga::File::unlock_clients() {
+void giga::File::unpause() {
 	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->unlock_client(); }
 	this->client_list_lock.unlock();
 }

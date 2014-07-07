@@ -24,13 +24,13 @@ giga::giga_size giga::ClientInfo::get_global_position() {
 
 	if(block == NULL) { return(0); }
 
-	while(block->get_prev() != NULL) { block = block->get_prev(); }
+	while(block->get_prev_safe() != NULL) { block = block->get_prev_safe(); }
 
 	int global_pos = 0;
 
 	while(block != this->block) {
 		global_pos += block->get_size();
-		block = block->get_next();
+		block = block->get_next_safe();
 	}
 
 	return(global_pos + this->block_offset);
