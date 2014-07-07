@@ -53,7 +53,9 @@ The most desired feature of this library for the author are the file operations 
 make implementing various file editors to be a much less work-intensive process, as the problems of dealing with varing file lengths are abstracted away into the 
 library; we therefore chose to represent the file as a _doubly-linked list_.
 
-### Modifying Links
+### Concurrent Doubly-Linked List
+
+#### Modifying Links
 
 A difficulty of doubly-linked lists exists, in that an implementation of an efficient _concurrent_ list cannot be easily found. We write down our implementation notes 
 here so to be abstracted later, either by the author or by some enterprising programmer.
@@ -106,7 +108,7 @@ Because `get` and `set` operations are trivial, we can use spin-locks here (impl
 `std::atomic<bool>` of size `1 byte`, _reducing the memory footprint_ of the linked list. This is preferable to using more complex mutexes, such as `std::mutex`, which 
 is of size `40 bytes`.
 
-### Modifying Content
+#### Modifying Content
 
 Note that in the previous notes, we have not mentioned modifying the actual _content_ of the nodes.
 
@@ -117,19 +119,42 @@ per-node basis.
 The use-case of these doubly-linked lists is that of large-file I/O, which is to say, we do not expect to be accessing all parts of the file at once -- we will be 
 implementing a _cache_ to deal with accessing the content, and lock the associated _cache line_ when editing a block -- given `n_cache_lines` locks, we can call a simple 
 hashing function `lock_index = n.id % n_cache_lines` to acquire an appropriate lock. Here, we are sacrificing a degree of concurrency (multiple nodes will map to the 
-same lock), but at the benefit of the memory footprint.
+same lock), but at the benefit of a low memory footprint.
 
-### File Editing
+### File
+
+#### Structure
 
 ```
+typedef long long int giga_size;
+class Block {
+	private:
+		size_t size;
+		string data;			// actual data to be saved onto disk and wiped, or loaded into memory
+		bool is_loaded, is_dirty;
+		giga_size global_offset;
 
+		// doubly-linked list implementation
+		giga_size id;
+		Block *next, *prev;
+		std::atomic<bool> prev_lock, next_lock;
+};
 ```
+
+Internally, a file is represented in memory with a linked list bit-array keeping track of dirty blocks of data. `Block::global_offset` is a file offset variable -- we 
+can use this to read directly from a file at the specified position, for `Block::size` bytes. If `Block::write` is called, `Block::is_dirty` is set to `true` and 
+`Block::global_offset` is set to `0` -- upon a subsequent call to `Block::unload`, `Block::data` is written to a file in `/tmp/`. On calling `Block::load`, a file path 
+is generated based on if `Block::is_dirty` is set, to read either from the original file, or read the changes stored in `/tmp/`.
+
+On calling `File::save`, we walk through the linked list and write all changes to the file.
+
+#### Cache Behavior
+
+Each call to `Block::read` or `Block::write` will increment an `n_access` variable stored in the cache line -- if the cache is full, the file library walks through the 
+cache and selects the cache line with the lowest `n_access` to be evicted (this is a simplified and generalized second-chance algorithm).
 
 Contact
 ----
 
 https://github.com/cripplet/giga/issues
 
- ``` Internally, a file is represented in memory with a linked-list bit-array keeping track of dirty blocks of data. On file save, all the dirty blocks are then 
-written to the file; intermediate states of dirty blocks are stored on disk in /tmp/. To keep the memory footprint small, giga only keeps recently-accessed blocks in RAM 
-with a least-used allocation policy (generalized second-chance). ```
