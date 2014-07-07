@@ -36,6 +36,13 @@ namespace giga {
 			giga_size read(giga_size start, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
 			giga_size write(giga_size start, const std::shared_ptr<std::string>& buffer);
 
+			void insert(const std::shared_ptr<Block>& head, const std::shared_ptr<Block>& tail);
+
+			void lock_prev();
+			void lock_next();
+			void unlock_prev();
+			void unlock_next();
+
 		private:
 			giga_size id;
 			giga_size global_offset;

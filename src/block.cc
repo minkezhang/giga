@@ -99,22 +99,44 @@ int giga::Block::get_is_dirty() { return(this->is_dirty); }
 
 giga::giga_size giga::Block::get_size() { return(this->size); }
 
-// linked list maintenance
+// linked list maintenance functions
+
+/**
+ * inserts a linked list into the current list
+ */
+void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::shared_ptr<giga::Block>& tail) {
+	this->lock_next();
+	this->get_next_unsafe()->lock_prev();
+
+	head->set_prev_unsafe(shared_from_this());
+	tail->set_next_unsafe(this->get_next_unsafe());
+
+	this->get_next_unsafe()->set_prev_unsafe(tail);
+	this->set_next_unsafe(head);
+
+	this->get_next_unsafe()->unlock_prev();
+	this->unlock_next();
+}
+
+void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
+void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
+void giga::Block::unlock_prev() { this->prev_lock = false; }
+void giga::Block::unlock_next() { this->next_lock = false; }
 
 std::shared_ptr<giga::Block> giga::Block::get_prev_unsafe() { return(this->prev); }
 std::shared_ptr<giga::Block> giga::Block::get_next_unsafe() { return(this->next); }
 
 std::shared_ptr<giga::Block> giga::Block::get_prev_safe() {
-	while(this->prev_lock.exchange(true)) {}
+	this->lock_prev();
 	std::shared_ptr<giga::Block> val = this->get_prev_unsafe();
-	this->prev_lock = false;
+	this->unlock_prev();
 	return(val);
 }
 
 std::shared_ptr<giga::Block> giga::Block::get_next_safe() {
-	while(this->next_lock.exchange(true)) {}
+	this->lock_next();
 	std::shared_ptr<giga::Block> val = this->get_next_unsafe();
-	this->next_lock = false;
+	this->unlock_next();
 	return(val);
 }
 
