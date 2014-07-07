@@ -67,7 +67,7 @@ locks per node: a lock guarding access to `n.prev` and a lock guarding access to
 // we assume all nodes from h to t are newly created, and therefore cannot be accessed by any other thread
 public void Node::insert(Node h, Node t) {
 	Node::lock(this->next_l);
-	Node::lock(this->next->prev_l);
+	Node::lock(this->get_next_unsafe()->prev_l);
 
 	// configuring the list segment to be appended
 	h->set_prev_unsafe(this);
@@ -77,7 +77,7 @@ public void Node::insert(Node h, Node t) {
 	this->get_next_unsafe()->set_prev_unsafe(t);
 	this->set_next_unsafe(h);
 
-	Node::unlock(this->next->prev_l);
+	Node::unlock(this->get_next_unsafe()->prev_l);
 	Node::unlock(this->next_l);
 }
 
