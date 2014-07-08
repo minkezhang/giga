@@ -25,8 +25,6 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 	res += (c->read(buffer, 0) == 0);
 	res += (buffer->compare("") == 0);
 
-	std::this_thread::sleep_for(std::chrono::milliseconds(rand() % 5));
-
 	res += (c->read(buffer, 1) == 1);
 	res += (buffer->compare("a") == 0);
 
@@ -58,7 +56,6 @@ TEST_CASE("concurrent|read") {
 			threads.push_back(std::thread (aux_read_test_worker, file, result));
 		}
 
-		// std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		while(file->get_n_clients()) {
 			// cf. http://bit.ly/1pLvXct
 			// std::this_thread::sleep_for(std::chrono::milliseconds(10));
