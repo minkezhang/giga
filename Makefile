@@ -11,6 +11,7 @@ INCLUDE_LIBS=-Iinclude/libs/catch/include/ -Iinclude/libs/ -Iinclude/libs/stackt
 
 # std::thread relies on the pthread lib
 # the segfault lib is very useful for the backtrace generated upon SIGSEGV
+#	cf. http://bit.ly/1qFQDTG
 LIBS=-pthread -lSegFault
 
 # remember to add all sources from subdirectories as well here
