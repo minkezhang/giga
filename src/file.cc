@@ -53,7 +53,6 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 			this->head_block = this->head_block->get_prev_safe();
 		}
 	}
-	std::cout << "File open" << std::endl;
 }
 
 giga::File::File(std::string filename, std::string mode) : giga::File::File(filename, mode, std::shared_ptr<giga::Config> (new giga::Config())) {}
@@ -66,7 +65,6 @@ giga::File::~File() {
 		}
 		this->head_block = this->head_block->get_next_safe();
 	}
-	std::cout << "File close" << std::endl;
 }
 
 std::map<int, std::shared_ptr<giga::ClientInfo>> giga::File::get_client_list() { return(this->client_list); }
@@ -95,7 +93,6 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 		result = this->client_list.at(client->get_id())->get_global_position();
 	} catch(const std::out_of_range& e) {
 		client->unlock_client();
-		std::cout << "given id == '" << client->get_id() << "'" << std::endl;
 		throw(giga::RuntimeError("giga::File::get_client_pos", "std::out_of_range thrown while attempting to find the client"));
 	}
 
@@ -150,7 +147,6 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		info = this->client_list.at(client->get_id());
 	} catch(const std::out_of_range& e) {
 		client->unlock_client();
-		std::cout << "given id == '" << client->get_id() << "'" << std::endl;
 		throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while attempting to find the client"));
 	}
 
@@ -245,7 +241,6 @@ std::shared_ptr<giga::Client> giga::File::open() {
 	c_info.reset();
 
 	this->n_clients++;
-	std::cout << this->n_clients << std::endl;
 	this->client_list_lock.unlock();
 	return(c);
 }
@@ -253,8 +248,6 @@ std::shared_ptr<giga::Client> giga::File::open() {
 void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 	this->client_list_lock.lock();
 	client->lock_client();
-
-	std::cout << "closing client " << client->get_id() << std::endl;
 
 	client->set_is_closed();
 	// client is erased from the list, but the reference is not deleted
