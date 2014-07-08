@@ -9,8 +9,9 @@ INCLUDE=-Iinclude/
 # include statements necessary to link all the individual libraries
 INCLUDE_LIBS=-Iinclude/libs/catch/include/ -Iinclude/libs/ -Iinclude/libs/stacktrace/
 
-# std::thread relies on the pthread lib          
-LIBS=-pthread
+# std::thread relies on the pthread lib
+# the segfault lib is very useful for the backtrace generated upon SIGSEGV
+LIBS=-pthread -lSegFault
 
 # remember to add all sources from subdirectories as well here
 SOURCES=src/*cc test/*cc libs/*/*cc
