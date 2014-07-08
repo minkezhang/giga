@@ -11,11 +11,7 @@ INCLUDE=-Iinclude/
 INCLUDE_LIBS=-Iinclude/libs/catch/include/ -Iinclude/libs/ -Iinclude/libs/stacktrace/
 
 # std::thread relies on the pthread lib
-# the segfault lib is very useful for the backtrace generated upon SIGSEGV
-#	cf. http://bit.ly/1qFQDTG
-# alternatively, set ulimit -c unlimited to get a core dump in /tmp/, and analyze via gdb
-#	cf. http://bit.ly/1zlOj8u, http://bit.ly/1n2ONGD, http://bit.ly/1n2ONGD, http://bit.ly/VCQ0yM
-LIBS=-pthread -lSegFault
+LIBS=-pthread
 
 # remember to add all sources from subdirectories as well here
 SOURCES=src/*cc test/*cc libs/*/*cc
@@ -31,8 +27,9 @@ $(EXECUTABLE): $(OBJECTS)
 
 # remember to run unit tests
 test: clean $(EXECUTABLE)
-	ulimit -c unlimited
-	./$(EXECUTABLE) | tee results.log
+	# set ulimit -c unlimited to get a core dump and analyze via gdb
+	#	cf. http://bit.ly/1zlOj8u, http://bit.ly/1n2ONGD, http://bit.ly/1n2ONGD, http://bit.ly/VCQ0yM
+	ulimit -c unlimited && ./$(EXECUTABLE) | tee results.log
 
 clean:
 	rm -f $(EXECUTABLE) *.o *.log

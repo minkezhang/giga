@@ -88,6 +88,10 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 		this->cache_entry_locks.at(i)->lock();
 	}
 
+	// minke
+	if(this->client_list[client->get_id()] == 0x00) {
+		throw(giga::InvalidOperation("giga::File::read", "client_list cannot find client with given id"));
+	}
 	giga_size result = this->client_list[client->get_id()]->get_global_position();
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
