@@ -38,7 +38,7 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 
 TEST_CASE("concurrent|read") {
 	int n_threads = 20;
-	int n_attempts = 100;
+	int n_attempts = 1000;
 
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
 
@@ -51,15 +51,18 @@ TEST_CASE("concurrent|read") {
 			threads.push_back(std::thread (aux_read_test_worker, file, result));
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		while(file->get_n_clients()) {
 			// cf. http://bit.ly/1pLvXct
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(std::chrono::milliseconds(10));
 		}
 
 
 		for(int i = 0; i < n_threads; i++) {
 			threads.at(i).join();
+		}
+		if(((attempt + 1) % 10) == 0) {
+			std::cout << "attempt: " << attempt + 1 << "/" << n_attempts << std::endl;
 		}
 	}
 
