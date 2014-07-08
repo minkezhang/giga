@@ -31,6 +31,7 @@ Planned Features
 * `seek(n)`, `save()`
 * possible network integration
 * performance testing
+* change internal file representation to be more scalable
 
 Known Bugs
 ----
@@ -50,7 +51,7 @@ Internals
 ----
 
 The most desired feature of this library for the author are the file operations which alters the file length -- if these are to be implemented successfully, this would 
-make implementing various file editors to be a much less work-intensive process, as the problems of dealing with varing file lengths are abstracted away into the 
+make the work of file editor development to be a much less work-intensive process, as the problems of dealing with varing file lengths are abstracted away into the 
 library; we therefore chose to represent the file as a _doubly-linked list_.
 
 ### Concurrent Doubly-Linked List
@@ -58,7 +59,7 @@ library; we therefore chose to represent the file as a _doubly-linked list_.
 #### Modifying Links
 
 A difficulty of doubly-linked lists exists, in that an implementation of an efficient _concurrent_ list cannot be easily found. We write down our implementation notes 
-here so to be abstracted later, either by the author or by some enterprising programmer.
+here so as to be abstracted later, either by the author or by some enterprising programmer.
 
 Given a doubly-linked node `n`, we wish to have the ability to append some data to the end of `n`: `n.insert(head_node, tail_node)`. In order to do this, we need two 
 locks per node: a lock guarding access to `n.prev` and a lock guarding access to `n.next`:
@@ -107,14 +108,22 @@ is of size `40 bytes`.
 
 Note that in the previous notes, we have not mentioned modifying the actual _content_ of the nodes.
 
-Ideally, we would also like to add a lock per node to deal with contention on a per-node basis; however, we would like these locks to provide some more features, such as 
-implementing the conditional variable API to notify waiting threads and such -- however, the memory footprint for such locks are prohibitively large for use on a 
+Ideally, we would also like to add a lock per node to deal with contention on a per-node basis; unfortunately, we would like these locks to provide some more features, 
+such as implementing the conditional variable API to notify waiting threads and such -- however, the memory footprint for such locks are prohibitively large for use on a 
 per-node basis.
 
 The use-case of these doubly-linked lists is that of large-file I/O, which is to say, we do not expect to be accessing all parts of the file at once -- we will be 
 implementing a _cache_ to deal with accessing the content, and lock the associated _cache line_ when editing a block -- given `n_cache_lines` locks, we can call a simple 
 hashing function `lock_index = n.id % n_cache_lines` to acquire an appropriate lock. Here, we are sacrificing a degree of concurrency (multiple nodes will map to the 
 same lock), but at the benefit of a low memory footprint.
+
+#### Alternatives
+
+Of course, doubly linked lists are not the only way in which a file can be represented efficiently in memory -- at the cost of a higher overhead, we could theoretically 
+implement a concurrent, generalized search tree, similar to the way in which the kernel represents files -- for very, very large files, we would just add another layer 
+between the root node and the leaves. This approach also has the benefit of being slightly more documented (Bronson et al. 2010, Lehman and Yao, 1981), though in terms 
+of large file I/O, we would still expect a caching technique similar to the one implemented in this library. We felt justified in using a doubly linked list as of now 
+due to the use-case -- that is, multiple clients editing localized portions of the file, with little to no random seeks by any given client.
 
 ### File
 
