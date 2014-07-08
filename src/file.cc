@@ -77,6 +77,11 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 	// cannot make changes to the document while calculating global position
 	client->lock_client();
 
+	if(client->get_is_closed()) {
+		client->unlock_client();
+		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client"));
+	}
+
 	this->cache_lock.lock();
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
@@ -120,6 +125,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	client->lock_client();
 
 	if(client->get_is_closed()) {
+		client->unlock_client();
 		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client"));
 	}
 

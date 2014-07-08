@@ -14,10 +14,12 @@
 #include "src/file.h"
 
 void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std::atomic<int>> result) {
-	std::shared_ptr<giga::Client> c = file->open();
-	std::shared_ptr<std::string> buffer (new std::string);
-
 	int res = 0;
+
+	std::shared_ptr<giga::Client> c = file->open();
+	res += (file->get_n_clients() > 0);
+
+	std::shared_ptr<std::string> buffer (new std::string);
 
 	res += (c->get_pos() == 0);
 	res += (c->read(buffer, 0) == 0);
@@ -34,9 +36,10 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 	res += (c->read(buffer, 1) == 0);
 	res += (buffer->compare("") == 0);
 
+	res += (file->get_n_clients() > 0);
 	file->close(c);
 
-	int expected = 9;
+	int expected = 11;
 	*result += (int) (res == expected);
 }
 

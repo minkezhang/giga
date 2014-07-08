@@ -1,8 +1,9 @@
 CC=g++
 
 # yadda yadda yadda beware -O3 optimizations and threading
-# -Wl,--no-as-need -- cf. http://bit.ly/ToQTcC
-CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic
+#	-Wl,--no-as-need -- cf. http://bit.ly/ToQTcC
+#	-fstack-protector-all -- cf. http://bit.ly/1vXj2nU
+CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic -fstack-protector-all
 
 INCLUDE=-Iinclude/
 
