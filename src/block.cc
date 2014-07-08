@@ -94,8 +94,8 @@ giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<
 }
 
 giga::giga_size giga::Block::get_id() { return(this->id); }
-int giga::Block::get_is_loaded() { return(this->is_loaded); }
-int giga::Block::get_is_dirty() { return(this->is_dirty); }
+bool giga::Block::get_is_loaded() { return(this->is_loaded); }
+bool giga::Block::get_is_dirty() { return(this->is_dirty); }
 
 giga::giga_size giga::Block::get_size() { return(this->size); }
 

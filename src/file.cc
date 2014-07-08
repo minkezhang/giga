@@ -53,6 +53,7 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 			this->head_block = this->head_block->get_prev_safe();
 		}
 	}
+	std::cout << "File open" << std::endl;
 }
 
 giga::File::File(std::string filename, std::string mode) : giga::File::File(filename, mode, std::shared_ptr<giga::Config> (new giga::Config())) {}
@@ -65,6 +66,7 @@ giga::File::~File() {
 		}
 		this->head_block = this->head_block->get_next_safe();
 	}
+	std::cout << "File close" << std::endl;
 }
 
 std::map<int, std::shared_ptr<giga::ClientInfo>> giga::File::get_client_list() { return(this->client_list); }
@@ -79,7 +81,7 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 
 	if(client->get_is_closed()) {
 		client->unlock_client();
-		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client"));
+		throw(giga::InvalidOperation("giga::File::get_client_pos", "attempting to read from a closed client"));
 	}
 
 	this->cache_lock.lock();
@@ -88,11 +90,15 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 		this->cache_entry_locks.at(i)->lock();
 	}
 
-	// minke
-	if(this->client_list[client->get_id()] == 0x00) {
-		throw(giga::InvalidOperation("giga::File::read", "client_list cannot find client with given id"));
+	giga_size result;
+	try {
+		result = this->client_list.at(client->get_id())->get_global_position();
+	} catch(const std::out_of_range& e) {
+		client->unlock_client();
+		std::cout << "given id == '" << client->get_id() << "'" << std::endl;
+		throw(giga::RuntimeError("giga::File::get_client_pos", "std::out_of_range thrown while attempting to find the client"));
 	}
-	giga_size result = this->client_list[client->get_id()]->get_global_position();
+
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->unlock();
@@ -139,7 +145,14 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		return(0);
 	}
 
-	std::shared_ptr<ClientInfo> info = this->client_list[client->get_id()];
+	std::shared_ptr<giga::ClientInfo> info;
+	try {
+		info = this->client_list.at(client->get_id());
+	} catch(const std::out_of_range& e) {
+		client->unlock_client();
+		std::cout << "given id == '" << client->get_id() << "'" << std::endl;
+		throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while attempting to find the client"));
+	}
 
 	// EOF check
 	if(info->get_block_offset() == info->get_block()->get_size()) {
@@ -216,13 +229,23 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 std::shared_ptr<giga::Client> giga::File::open() {
 	this->client_list_lock.lock();
 
-	std::shared_ptr<giga::Client> c;
-	c = std::shared_ptr<giga::Client> (new giga::Client(this->shared_from_this(), this->n_clients));
+	if(this->n_clients < 0) {
+		this->client_list_lock.unlock();
+		throw(giga::RuntimeError("giga::File::open", "File::n_client overflowed"));
+	}
+	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), this->n_clients));
 	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(c, this->head_block));
-	this->client_list[this->n_clients] = c_info;
+
+	if(this->client_list.find(c->get_id()) != this->client_list.end()) {
+		this->client_list_lock.unlock();
+		throw(giga::RuntimeError("giga::File::open", "Duplicate client ID found"));
+	}
+
+	this->client_list.insert(std::pair<int, std::shared_ptr<giga::ClientInfo>> (c->get_id(), c_info));
 	c_info.reset();
 
 	this->n_clients++;
+	std::cout << this->n_clients << std::endl;
 	this->client_list_lock.unlock();
 	return(c);
 }
@@ -231,9 +254,11 @@ void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 	this->client_list_lock.lock();
 	client->lock_client();
 
+	std::cout << "closing client " << client->get_id() << std::endl;
+
 	client->set_is_closed();
-	// if we use this, we can simplify File::get_n_clients to check for client_list.size()
-	// this->client_list.erase(client->get_id());
+	// client is erased from the list, but the reference is not deleted
+	this->client_list.erase(client->get_id());
 
 	client->unlock_client();
 	this->client_list_lock.unlock();
@@ -320,12 +345,9 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 }
 
 int giga::File::get_n_clients() {
-	int n = 0;
 	this->client_list_lock.lock();
 
-	for(std::map<int, std::shared_ptr<ClientInfo>>::iterator i = this->client_list.begin(); i != this->client_list.end(); ++i) {
-		n += !i->second->get_client()->get_is_closed();
-	}
+	int n = this->client_list.size();
 
 	this->client_list_lock.unlock();
 	return(n);

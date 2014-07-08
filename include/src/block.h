@@ -30,8 +30,8 @@ namespace giga {
 			void load(std::string filename, std::string mode);
 			void unload(std::string filename);
 
-			int get_is_loaded();
-			int get_is_dirty();
+			bool get_is_loaded();
+			bool get_is_dirty();
 
 			giga_size read(giga_size start, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
 			giga_size write(giga_size start, const std::shared_ptr<std::string>& buffer);
@@ -48,8 +48,8 @@ namespace giga {
 			giga_size global_offset;
 			size_t size;
 
-			int is_dirty;
-			int is_loaded;
+			bool is_dirty;
+			bool is_loaded;
 
 			// cf. http://bit.ly/VTIjF0
 			std::atomic<bool> prev_lock;

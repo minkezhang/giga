@@ -43,7 +43,7 @@ namespace giga {
 
 		private:
 			// unique ID tracker
-			int n_clients;
+			std::atomic<int> n_clients;
 
 			std::string filename;
 			std::string mode;
