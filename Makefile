@@ -10,7 +10,7 @@ INCLUDE=-Iinclude/
 INCLUDE_LIBS=-Iinclude/libs/catch/include/ -Iinclude/libs/ -Iinclude/libs/stacktrace/
 
 # std::thread relies on the pthread lib          
-LIBS=-lpthread
+LIBS=-pthread
 
 # remember to add all sources from subdirectories as well here
 SOURCES=src/*cc test/*cc libs/*/*cc
