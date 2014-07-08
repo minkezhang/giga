@@ -110,7 +110,7 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 		this->get_next_unsafe()->lock_prev();
 	}
 
-	head->set_prev_unsafe(shared_from_this());
+	head->set_prev_unsafe(this->shared_from_this());
 	tail->set_next_unsafe(this->get_next_unsafe());
 
 	if(this->get_next_unsafe() != NULL) {

@@ -101,10 +101,13 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  */
 giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
 	throw(giga::NotImplemented("giga::File::seek"));
+	/*
 	this->pause();
 	giga_size result = 0;
 	this->unpause();
 	return(result);
+	*/
+	return(0);
 }
 
 /**
@@ -238,11 +241,15 @@ void giga::File::save() {
  */
 void giga::File::pause() {
 	this->client_list_lock.lock();
-	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->lock_client(); }
+	for(std::map<int, std::shared_ptr<giga::ClientInfo>>::iterator i = this->client_list.begin(); i != this->client_list.end(); ++i) {
+		i->second->get_client()->lock_client();
+	}
 }
 
 void giga::File::unpause() {
-	for(unsigned int i = 0; i < this->client_list.size(); i++) { this->client_list.at(i)->get_client()->unlock_client(); }
+	for(std::map<int, std::shared_ptr<giga::ClientInfo>>::iterator i = this->client_list.begin(); i != this->client_list.end(); ++i) {
+		i->second->get_client()->unlock_client();
+	}
 	this->client_list_lock.unlock();
 }
 
