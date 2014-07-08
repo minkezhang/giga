@@ -228,7 +228,8 @@ void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 	client->lock_client();
 
 	client->set_is_closed();
-	this->client_list.erase(client->get_id());
+	// if we use this, we can simplify File::get_n_clients to check for client_list.size()
+	// this->client_list.erase(client->get_id());
 
 	client->unlock_client();
 	this->client_list_lock.unlock();
@@ -315,10 +316,12 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 }
 
 int giga::File::get_n_clients() {
-	int n;
+	int n = 0;
 	this->client_list_lock.lock();
 
-	n = this->client_list.size();
+	for(std::map<int, std::shared_ptr<ClientInfo>>::iterator i = this->client_list.begin(); i != this->client_list.end(); ++i) {
+		n += !i->second->get_client()->get_is_closed();
+	}
 
 	this->client_list_lock.unlock();
 	return(n);
