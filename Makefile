@@ -13,7 +13,7 @@ INCLUDE_LIBS=-Iinclude/libs/catch/include/ -Iinclude/libs/ -Iinclude/libs/stackt
 # the segfault lib is very useful for the backtrace generated upon SIGSEGV
 #	cf. http://bit.ly/1qFQDTG
 # alternatively, set ulimit -c unlimited to get a core dump in /tmp/, and analyze via gdb
-#	cf. http://bit.ly/1zlOj8u
+#	cf. http://bit.ly/1zlOj8u, http://bit.ly/1n2ONGD
 LIBS=-pthread -lSegFault
 
 # remember to add all sources from subdirectories as well here
@@ -30,6 +30,7 @@ $(EXECUTABLE): $(OBJECTS)
 
 # remember to run unit tests
 test: clean $(EXECUTABLE)
+	ulimit -c unlimited
 	./$(EXECUTABLE) | tee results.log
 
 clean:
