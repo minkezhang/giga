@@ -106,15 +106,21 @@ giga::giga_size giga::Block::get_size() { return(this->size); }
  */
 void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::shared_ptr<giga::Block>& tail) {
 	this->lock_next();
-	this->get_next_unsafe()->lock_prev();
+	if(this->get_next_unsafe() != NULL) {
+		this->get_next_unsafe()->lock_prev();
+	}
 
 	head->set_prev_unsafe(shared_from_this());
 	tail->set_next_unsafe(this->get_next_unsafe());
 
-	this->get_next_unsafe()->set_prev_unsafe(tail);
+	if(this->get_next_unsafe() != NULL) {
+		this->get_next_unsafe()->set_prev_unsafe(tail);
+	}
 	this->set_next_unsafe(head);
 
-	this->get_next_unsafe()->unlock_prev();
+	if(this->get_next_unsafe() != NULL) {
+		this->get_next_unsafe()->unlock_prev();
+	}
 	this->unlock_next();
 }
 
