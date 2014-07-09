@@ -5,11 +5,9 @@
 #include <mutex>
 
 #include "src/block.h"
-#include "src/client.h"
 #include "src/global.h"
 
 namespace giga {
-	class Client;
 	class Block;
 
 	/**
@@ -17,9 +15,7 @@ namespace giga {
 	 */
 	class ClientInfo {
 		public:
-			ClientInfo(const std::shared_ptr<Client>& client, const std::shared_ptr<Block>& block);
-
-			const std::shared_ptr<Client>& get_client();
+			ClientInfo(const std::shared_ptr<Block>& block);
 
 			std::shared_ptr<Block> get_block();
 
@@ -30,7 +26,6 @@ namespace giga {
 			void set_block_offset(giga_size n_bytes);
 
 		private:
-			std::shared_ptr<Client> client;
 			std::shared_ptr<Block> block;
 
 			giga_size block_offset;

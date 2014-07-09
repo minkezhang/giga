@@ -19,13 +19,14 @@
 namespace giga {
 	class Client;
 	class Block;
+	class BlockInfo;
 	class File : public std::enable_shared_from_this<File> {
 		public:
 			File(std::string filename, std::string mode);
 			File(std::string filename, std::string mode, const std::shared_ptr<Config>& config);
 			~File();
 
-			std::map<int, std::shared_ptr<giga::ClientInfo>> get_client_list();
+			std::shared_ptr<Client> get_client_list();
 
 			giga_size get_client_pos(const std::shared_ptr<Client>& client);
 
@@ -42,23 +43,25 @@ namespace giga {
 			void save();
 
 		private:
-			// unique ID tracker
 			std::atomic<int> n_clients;
+
+			// unique ID tracker
+			std::atomic<int> n_opens;
 
 			std::string filename;
 			std::string mode;
 
+			// linked list of open clients
 			std::mutex client_list_lock;
-
-			std::map<int, std::shared_ptr<ClientInfo>> client_list;
+			std::shared_ptr<Client> head_client;
 
 			// data is represented by a linked list -- gives location of the first block of data
 			std::shared_ptr<Block> head_block;
 
-			void allocate(const std::shared_ptr<Block>& block);
-
 			void pause();
 			void unpause();
+
+			void allocate(const std::shared_ptr<Block>& block);
 
 			// list of blocks whose data is loaded
 			std::map<giga_size, std::shared_ptr<BlockInfo>> cache;

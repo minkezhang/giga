@@ -13,7 +13,7 @@ TEST_CASE("block|read") {
 	std::shared_ptr<std::string> buffer (new std::string);
 
 	std::shared_ptr<giga::File> file_empty (new giga::File("test/files/empty.txt", "r"));
-	REQUIRE(file_empty->get_client_list().size() == 0);
+	REQUIRE(file_empty->get_n_clients() == 0);
 
 	std::shared_ptr<giga::Client> c_empty = file_empty->open();
 

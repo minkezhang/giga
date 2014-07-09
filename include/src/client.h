@@ -5,14 +5,20 @@
 #include <vector>
 
 #include "src/global.h"
+#include "src/info.h"
 
 #include "src/file.h"
 
 namespace giga {
 	class File;
+	class ClientInfo;
+	class BlockInfo;
+	/**
+	 * client is a linked list
+	 */
 	class Client : public std::enable_shared_from_this<Client> {
 		public:
-			Client(const std::shared_ptr<File>& file, int id);
+			Client(const std::shared_ptr<File>& file, const std::shared_ptr<ClientInfo>& client_info, const std::shared_ptr<Client>& next, int id);
 
 			int get_id();
 
@@ -27,13 +33,23 @@ namespace giga {
 			void lock_client();
 			void unlock_client();
 
-			int get_is_closed();
+			bool get_is_closed();
 			void set_is_closed();
+
+			std::shared_ptr<ClientInfo> get_client_info();
+
+			std::shared_ptr<Client> get_next_unsafe();
+			void set_next_unsafe(const std::shared_ptr<Client>& next);
+
+			void insert(const std::shared_ptr<Client>& head);
+			void erase(const std::shared_ptr<Client>& target);
 
 		private:
 			int id;
-			int is_closed;
+			bool is_closed;
 			std::shared_ptr<File> file;
+			std::shared_ptr<Client> next;
+			std::shared_ptr<ClientInfo> client_info;
 			std::mutex client_lock;
 	};
 }
