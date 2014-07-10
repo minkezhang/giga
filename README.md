@@ -51,19 +51,18 @@ Library Structure
 ----
 
 ```
-	./
-		external/		external libraries required for compilation
-			.../
-		include/		headers
-			libs/
-				.../	headers from external libraries (symlinked from external/)
-			src/		src headers
-			test/		test headers
-		libs/			source files from external libs (symlinked from external/)
-			.../
-		src/			source files for this library
-		test/			source files for tests
-        
+./
+	external/		# external libraries required for compilation
+		.../
+	include/		# headers
+		libs/
+			.../	# headers from external libraries (symlinked from external/)
+		src/		# src headers
+		test/		# test headers
+	libs/			# source files from external libs (symlinked from external/)
+		.../
+	src/			# source files for this library
+	test/			# source files for tests
 ```
 
 Internals
