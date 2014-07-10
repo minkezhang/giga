@@ -5,56 +5,53 @@
 #include <string>
 
 namespace giga {
-	class NotImplemented : public std::exception {
+	class BaseError : public std::exception {
 		public:
-			NotImplemented(std::string func_name);
 			virtual const char *what() const throw();
 		protected:
-			std::string func_name;
 			std::string buffer;
+	};
+
+	class NotImplemented : public BaseError {
+		public:
+			NotImplemented(std::string func_name);
+		protected:
+			std::string func_name;
 	};
 
 	/**
 	 * general error class
 	 */
-	class InvalidOperation : public std::exception {
+	class InvalidOperation : public BaseError {
 		public:
 			InvalidOperation(std::string func_name, std::string msg);
-			virtual const char *what() const throw();
 		protected:
 			std::string func_name;
 			std::string msg;
-			std::string buffer;
 	};
 
-	class RuntimeError : public std::exception {
+	class RuntimeError : public BaseError {
 		public:
 			RuntimeError(std::string func_name, std::string msg);
-			virtual const char *what() const throw();
 		protected:
 			std::string func_name;
 			std::string msg;
-			std::string buffer;
 	};
 
-	class FileNotFound : public std::exception {
+	class FileNotFound : public BaseError {
 		public:
 			FileNotFound(std::string filename);
-			virtual const char *what() const throw();
 		protected:
 			std::string filename;
-			std::string buffer;
 	};
 
-	class InvalidFileOperation : public std::exception {
+	class InvalidFileOperation : public BaseError {
 		public:
 			InvalidFileOperation(std::string filename, std::string mode, int error_type);
-			virtual const char *what() const throw();
 		protected:
 			std::string filename;
 			std::string mode;
 			int error_type;
-			std::string buffer;
 	};
 }
 

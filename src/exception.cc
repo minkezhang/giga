@@ -7,6 +7,8 @@
 
 #include "src/exception.h"
 
+const char *giga::BaseError::what() const throw() { return(this->buffer.c_str()); }
+
 giga::InvalidOperation::InvalidOperation(std::string func_name, std::string msg) {
 	this->func_name = func_name;
 	this->msg = msg;
@@ -15,7 +17,6 @@ giga::InvalidOperation::InvalidOperation(std::string func_name, std::string msg)
 	buffer << "InvalidOperation(" << this->func_name << "): Invalid operation on " << this->func_name << "() -- " << this->msg;
 	this->buffer = buffer.str();
 }
-const char *giga::InvalidOperation::what() const throw() { return(this->buffer.c_str()); }
 
 giga::RuntimeError::RuntimeError(std::string func_name, std::string msg) {
 	this->func_name = func_name;
@@ -25,7 +26,6 @@ giga::RuntimeError::RuntimeError(std::string func_name, std::string msg) {
 	buffer << "RuntimeError(" << this->func_name << "): " << this->func_name << "() -- " << this->msg;
 	this->buffer = buffer.str();
 }
-const char *giga::RuntimeError::what() const throw() { return(this->buffer.c_str()); }
 
 giga::NotImplemented::NotImplemented(std::string func_name) {
 	this->func_name = func_name;
@@ -34,7 +34,6 @@ giga::NotImplemented::NotImplemented(std::string func_name) {
 	buffer << "NotImplemented(" << this->func_name << "): Method not implemented " << this->func_name << "()";
 	this->buffer = buffer.str();
 }
-const char *giga::NotImplemented::what() const throw() { return(this->buffer.c_str()); }
 
 giga::FileNotFound::FileNotFound(std::string filename) {
 	this->filename = filename;
@@ -43,7 +42,6 @@ giga::FileNotFound::FileNotFound(std::string filename) {
 	buffer << "FileNotFound(" << this->filename << "): Cannot find file " << this->filename;
 	this->buffer = buffer.str();
 }
-const char *giga::FileNotFound::what() const throw() { return(this->buffer.c_str()); }
 
 giga::InvalidFileOperation::InvalidFileOperation(std::string filename, std::string mode, int error_type) {
 	this->filename = filename;
@@ -54,4 +52,3 @@ giga::InvalidFileOperation::InvalidFileOperation(std::string filename, std::stri
 	buffer << "InvalidFileOperation(" << this->filename << ", " << this->mode << ", " << this->error_type << "): Invalid " << this->mode << " operation with ferror(fp) = " << this->error_type;
 	this->buffer = buffer.str();
 }
-const char *giga::InvalidFileOperation::what() const throw() { return(this->buffer.c_str()); }
