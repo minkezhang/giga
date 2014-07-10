@@ -34,7 +34,8 @@ namespace giga {
 			giga_size get_pos();
 			giga_size seek(giga_size global_pos);
 			giga_size read(const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
-			giga_size write(const std::shared_ptr<std::string>& buffer);
+			giga_size write(const std::shared_ptr<std::string>& buffer, bool is_insert);
+			giga_size erase(size_t len);
 			bool get_is_closed();
 
 			/**
@@ -45,14 +46,14 @@ namespace giga {
 			 * Client::get_next_unsafe is called by File::open and File::close
 			 * Client::set_next_unsafe is called by File::open and File::close
 			 * Client::insert is called by File::open
-			 * Client::erase is called by File::close
+			 * Client::remove is called by File::close
 			 */
 			Client(const std::shared_ptr<File>& file, const std::shared_ptr<ClientInfo>& client_info, const std::shared_ptr<Client>& next, int id);
 			std::shared_ptr<ClientInfo> get_client_info();
 			std::shared_ptr<Client> get_next_unsafe();
 			void set_next_unsafe(const std::shared_ptr<Client>& next);
 			void insert(const std::shared_ptr<Client>& head);
-			void erase(const std::shared_ptr<Client>& target);
+			void remove(const std::shared_ptr<Client>& target);
 			void lock_client();
 			void unlock_client();
 			void set_is_closed();

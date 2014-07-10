@@ -39,7 +39,8 @@ namespace giga {
 			bool get_is_dirty();
 
 			giga_size read(giga_size start, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
-			giga_size write(giga_size start, const std::shared_ptr<std::string>& buffer);
+			giga_size write(giga_size start, const std::shared_ptr<std::string>& buffer, bool is_insert);
+			giga_size erase(giga_size start, size_t len);
 
 			void insert(const std::shared_ptr<Block>& head, const std::shared_ptr<Block>& tail);
 

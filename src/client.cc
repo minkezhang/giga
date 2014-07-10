@@ -22,6 +22,14 @@ giga::giga_size giga::Client::read(const std::shared_ptr<std::string>& buffer, g
 	return(this->file->read(this->shared_from_this(), buffer, n_bytes));
 }
 
+giga::giga_size giga::Client::write(const std::shared_ptr<std::string>& buffer, bool is_insert) {
+	return(this->file->write(this->shared_from_this(), buffer, is_insert));
+}
+
+giga::giga_size giga::Client::erase(size_t len) {
+	return(this->file->erase(this->shared_from_this(), len));
+}
+
 giga::giga_size giga::Client::get_pos() {
 	return(this->file->get_client_pos(this->shared_from_this()));
 }
@@ -55,7 +63,7 @@ void giga::Client::insert(const std::shared_ptr<giga::Client>& head) {
 /**
  * cf. Herlihy and Shavit, "Fine-Grained Synchronization" for reference implementation
  */
-void giga::Client::erase(const std::shared_ptr<giga::Client>& target) {
+void giga::Client::remove(const std::shared_ptr<giga::Client>& target) {
 	if(this->get_id() == target->get_id()) {
 		this->set_is_closed();
 		return;
@@ -82,6 +90,6 @@ void giga::Client::erase(const std::shared_ptr<giga::Client>& target) {
 		curr->unlock_client();
 	}
 	if(!success) {
-		throw(giga::InvalidOperation("giga::Client::erase", "cannot find client in client list"));
+		throw(giga::InvalidOperation("giga::Client::remove", "cannot find client in client list"));
 	}
 }

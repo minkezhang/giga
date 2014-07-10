@@ -94,11 +94,21 @@ giga::giga_size giga::Block::read(giga::giga_size start, const std::shared_ptr<s
 	return(bytes_read);
 }
 
-giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer) {
-	throw(giga::NotImplemented("giga::Block::write"));
-
+giga::giga_size giga::Block::erase(giga::giga_size start, size_t len) {
 	this->is_dirty = 1;
 	this->global_offset = 0;
+	this->data.erase(start, len);
+	return(len);
+}
+
+giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer, bool is_insert) {
+	this->is_dirty = 1;
+	this->global_offset = 0;
+	if(is_insert) {
+		this->data.insert(start, *buffer);
+	} else {
+		this->data.replace(start, buffer->length(), *buffer);
+	}
 	return(buffer->length());
 }
 
