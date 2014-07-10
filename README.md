@@ -63,7 +63,6 @@ Any results due to the use of this library in general are also the sole responsi
 		libs/
 			.../		# headers from external libraries (symlinked from external/)
 		src/			# src headers
-			...		# do not contain API calls
 			client.h	# contains API calls
 			config.h	# contains API calls
 			file.h		# contains API calls
