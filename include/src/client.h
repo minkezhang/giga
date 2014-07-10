@@ -1,9 +1,11 @@
 #ifndef _CLIENT_H
 #define _CLIENT_H
 
+#include <atomic>
 #include <memory>
 #include <vector>
 
+#include "src/exception.h"
 #include "src/global.h"
 #include "src/info.h"
 
@@ -45,7 +47,7 @@ namespace giga {
 			void erase(const std::shared_ptr<Client>& target);
 
 		private:
-			int id;
+			std::atomic<int> id;
 			bool is_closed;
 			std::shared_ptr<File> file;
 			std::shared_ptr<Client> next;

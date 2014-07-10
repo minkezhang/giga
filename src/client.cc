@@ -56,18 +56,34 @@ void giga::Client::insert(const std::shared_ptr<giga::Client>& head) {
  * cf. Herlihy and Shavit, "Fine-Grained Synchronization" for reference implementation
  */
 void giga::Client::erase(const std::shared_ptr<giga::Client>& target) {
-	target->lock_client();
-	target->set_is_closed();
-	target->unlock_client();
-	/*
+	if(this->get_id() == target->get_id()) {
+		this->lock_client();
+		this->set_is_closed();
+		this->unlock_client();
+		return;
+	}
+
+	bool success = false;
+
 	std::shared_ptr<giga::Client> pred = this->shared_from_this();
 	std::shared_ptr<giga::Client> curr = NULL;
-	pred->lock_client();
-	while(pred != target) {
-		std::shared_ptr<giga::Client> curr = ;
+	while(!success) {
+		pred->lock_client();
+		curr = pred->get_next_unsafe();
+		if(curr == NULL) {
+			break;
+		}
 		curr->lock_client();
-		
+		if(curr->get_id() == target->get_id()) {
+			pred->set_next_unsafe(target->get_next_unsafe());
+			target->set_is_closed();
+			success = true;
+		}
+		pred->unlock_client();
+		pred = curr;
 		curr->unlock_client();
 	}
-	*/
+	if(!success) {
+		throw(giga::InvalidOperation("giga::Client::erase", "cannot find client in client list"));
+	}
 }
