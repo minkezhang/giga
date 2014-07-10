@@ -25,6 +25,7 @@ Current Features
 * object-oriented file framework
 * unit tests covering concurrency usage
 * concurrent and sequential reads implemented
+* read-only, read-write, write-only mode abstraction
 
 Planned Features
 ----
@@ -55,6 +56,7 @@ All API calls are **guaranteed** (!) to be atomic and are defined in `include/sr
 has not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. 
 Any results due to the use of this library in general are also the sole responsibility of the user.
 
+### Layout
 ```
 ./
 	external/			# external libraries required for compilation
@@ -72,6 +74,12 @@ Any results due to the use of this library in general are also the sole responsi
 	src/				# source files for this library
 	test/				# source files for tests
 ```
+
+### File Modes
+
+A `giga::File` instance can be instantiated with read-only (`ro`), read-write (`rw`), and write-only (`wo`) modes. A read-only `giga::File` has corresponding `fopen` 
+mode of `r`, a write-only mode corresponds to `w`. Read-write mode **creates** the file if it does not exist, else it **opens the file for updates** (as per default 
+editor behavior).
 
 Internals
 ----
