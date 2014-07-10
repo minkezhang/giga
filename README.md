@@ -15,7 +15,7 @@ very inefficient due to the implicit `memcpy` invocations. Finally, there is als
 becoming an increasingly desired feature in today's multiprocessor environment.
 
 Thus, we need a file library which can
-* read files in its entirety without needing to allocate `File::size()` of memory space to do so
+* read files in its entirety without needing to allocate the size of the file of memory space to do so
 * handle file length changes gracefully and efficiently
 * handle concurrent file changes
 
