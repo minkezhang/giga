@@ -65,9 +65,6 @@ TEST_CASE("concurrent|read") {
 		for(int i = 0; i < n_threads; i++) {
 			threads.at(i).join();
 		}
-		if(((attempt + 1) % 10) == 0) {
-			std::cout << "attempt: " << attempt + 1 << "/" << n_attempts << std::endl;
-		}
 	}
 
 	REQUIRE(*result == n_attempts * n_threads);

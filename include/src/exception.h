@@ -11,6 +11,7 @@ namespace giga {
 			virtual const char *what() const throw();
 		protected:
 			std::string func_name;
+			std::string buffer;
 	};
 
 	/**
@@ -23,6 +24,7 @@ namespace giga {
 		protected:
 			std::string func_name;
 			std::string msg;
+			std::string buffer;
 	};
 
 	class RuntimeError : public std::exception {
@@ -32,6 +34,7 @@ namespace giga {
 		protected:
 			std::string func_name;
 			std::string msg;
+			std::string buffer;
 	};
 
 	class FileNotFound : public std::exception {
@@ -40,6 +43,7 @@ namespace giga {
 			virtual const char *what() const throw();
 		protected:
 			std::string filename;
+			std::string buffer;
 	};
 
 	class InvalidFileOperation : public std::exception {
@@ -50,6 +54,7 @@ namespace giga {
 			std::string filename;
 			std::string mode;
 			int error_type;
+			std::string buffer;
 	};
 }
 
