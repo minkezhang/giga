@@ -48,7 +48,7 @@ namespace giga {
 
 		private:
 			std::atomic<int> id;
-			bool is_closed;
+			std::atomic<bool> is_closed;
 			std::shared_ptr<File> file;
 			std::shared_ptr<Client> next;
 			std::shared_ptr<ClientInfo> client_info;

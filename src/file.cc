@@ -214,10 +214,8 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 }
 
 std::shared_ptr<giga::Client> giga::File::open() {
-	this->client_list_lock.lock();
-
 	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(this->head_block));
-	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), c_info, NULL, this->n_opens));
+	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), c_info, NULL, this->n_opens.fetch_add(1)));
 	if(this->head_client == NULL) {
 		this->head_client = c;
 	} else {
@@ -227,23 +225,12 @@ std::shared_ptr<giga::Client> giga::File::open() {
 	c_info.reset();
 
 	this->n_clients++;
-	this->n_opens++;
-
-	this->client_list_lock.unlock();
 	return(c);
 }
 
 void giga::File::close(const std::shared_ptr<giga::Client>& client) {
-	this->client_list_lock.lock();
-	// client->lock_client();
-
-	// client->set_is_closed();
-	// client is erased from the list, but the reference is not deleted
 	this->head_client->erase(client);
-
 	this->n_clients--;
-	// client->unlock_client();
-	this->client_list_lock.unlock();
 }
 
 void giga::File::save() {
@@ -259,20 +246,10 @@ void giga::File::save() {
  */
 void giga::File::pause() {
 	throw(giga::NotImplemented("giga::File::pause"));
-	/*
-	this->client_list_lock.lock();
-	for(std::map<int, std::shared_ptr<giga::ClientInfo>>::iterator i = this->head_client.begin(); i != this->head_client.end(); ++i) {
-		i->second->get_client()->lock_client();
-	}*/
 }
 
 void giga::File::unpause() {
 	throw(giga::NotImplemented("giga::File::unpause"));
-	/*
-	for(std::map<int, std::shared_ptr<giga::ClientInfo>>::iterator i = this->head_client.begin(); i != this->head_client.end(); ++i) {
-		i->second->get_client()->unlock_client();
-	}
-	this->client_list_lock.unlock();*/
 }
 
 /**
@@ -282,6 +259,7 @@ void giga::File::unpause() {
  */
 void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 	this->cache_lock.lock();
+
 	// lock before making any changes -- this way, prevent access by read() and write() until lock is released
 	size_t block_cache_pos = block->get_id() % this->n_cache_entries;
 	this->cache_entry_locks.at(block_cache_pos)->lock();
@@ -330,9 +308,4 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 	this->cache_lock.unlock();
 }
 
-int giga::File::get_n_clients() {
-	this->client_list_lock.lock();
-	int n = this->n_clients;
-	this->client_list_lock.unlock();
-	return(n);
-}
+int giga::File::get_n_clients() { return(this->n_clients); }

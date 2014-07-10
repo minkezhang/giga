@@ -57,9 +57,7 @@ void giga::Client::insert(const std::shared_ptr<giga::Client>& head) {
  */
 void giga::Client::erase(const std::shared_ptr<giga::Client>& target) {
 	if(this->get_id() == target->get_id()) {
-		this->lock_client();
 		this->set_is_closed();
-		this->unlock_client();
 		return;
 	}
 
