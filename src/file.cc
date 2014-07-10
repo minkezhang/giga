@@ -2,10 +2,6 @@
 #include <sys/stat.h>
 #include <vector>
 
-#include <iostream>
-#include <thread>
-#include <unistd.h>
-
 #include "src/exception.h"
 
 #include "src/file.h"
