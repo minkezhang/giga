@@ -49,38 +49,6 @@ make test
 
 cf. `test/concurrent.cc` for usage example
 
-API Structure
-----
-
-All API calls are **guaranteed** (!) to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user 
-has not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. 
-Any results due to the use of this library in general are also the sole responsibility of the user.
-
-### Layout
-```
-./
-	external/			# external libraries required for compilation
-		.../
-	include/			# headers
-		libs/
-			.../		# headers from external libraries (symlinked from external/)
-		src/			# src headers
-			client.h	# contains API calls
-			config.h	# contains API calls
-			file.h		# contains API calls
-		test/			# test headers
-	libs/				# source files from external libs (symlinked from external/)
-		.../
-	src/				# source files for this library
-	test/				# source files for tests
-```
-
-### File Modes
-
-A `giga::File` instance can be instantiated with read-only (`ro`), read-write (`rw`), and write-only (`wo`) modes. A read-only `giga::File` has corresponding `fopen` 
-mode of `r`, a write-only mode corresponds to `w`. Read-write mode **creates** the file if it does not exist, else it **opens the file for updates** (as per default 
-editor behavior).
-
 Internals
 ----
 
@@ -190,6 +158,52 @@ On calling `File::save`, we walk through the linked list and write all changes t
 
 Each call to `Block::read` or `Block::write` will increment an `n_access` variable stored in the cache line -- if the cache is full, the file library walks through the 
 cache and selects the cache line with the lowest `n_access` to be evicted (this is a simplified and generalized second-chance algorithm).
+
+API Structure
+----
+
+All API calls are **guaranteed** (!) to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user 
+has not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. 
+Any results due to the use of this library in general are also the sole responsibility of the user.
+
+### Layout
+```
+./
+	external/			# external libraries required for compilation
+		.../
+	include/			# headers
+		libs/
+			.../		# headers from external libraries (symlinked from external/)
+		src/			# src headers
+			client.h	# contains API calls
+			config.h	# contains API calls
+			file.h		# contains API calls
+		test/			# test headers
+	libs/				# source files from external libs (symlinked from external/)
+		.../
+	src/				# source files for this library
+	test/				# source files for tests
+```
+
+### File Modes
+
+A `File::File` instance can be instantiated with read-only (`ro`), read-write (`rw`), and write-only (`wo`) modes. A read-only `File::File` has corresponding `fopen` 
+mode of `r`, a write-only mode corresponds to `w`. Read-write mode **creates** the file if it does not exist, else it **opens the file for updates** (as per default 
+editor behavior).
+
+### Config
+
+```
+class Config {
+	private:
+		size_t page_size, max_page_size, n_cache_entries;
+};
+```
+
+A `Config::Config` instance tunes the file for maximum performance. `Config::page_size` is the size of a `Block::Block` upon loading data from the file. 
+`Config::max_page_size` is a size tolerance at which the file will insert a new `Block::Block` to the tail of the current block during calls to `File::write`. 
+`Config::n_cache_entries` configures the size of the cache in the file. Too large of a cache will load many blocks into memory, which may negatively impact performance. 
+Too small of a cache will result in unnecessary evictions, and will also negatively impact performance.
 
 Contact
 ----
