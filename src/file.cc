@@ -21,6 +21,7 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	this->n_opens = 0;
 
 	this->n_cache_entries = config->get_n_cache_entries();
+
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.push_back(std::shared_ptr<std::mutex> (new std::mutex()));
 	}
@@ -40,7 +41,7 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	struct stat stat_buf;
 
 	int result = stat(filename.c_str(), &stat_buf);
-
+	this->max_page_size = config->get_max_page_size();
 	size_t page_size = config->get_page_size();
 
 	giga_size s = (result == 0) ? stat_buf.st_size : -1;

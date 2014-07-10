@@ -7,18 +7,21 @@
 /**
  * Config::Config provides a way to configure the File::File instance
  *
- * these functions MAY be called by the user, and are guaranteed to be atomic
+ * these functions MAY be called by the user
  */
 namespace giga {
 	class Config {
 		public:
+			Config(size_t page_size, size_t max_page_size, size_t n_cache_entries);
+
 			Config();
-			Config(size_t page_size, size_t n_cache_entries);
 			size_t get_page_size();
+			size_t get_max_page_size();
 			size_t get_n_cache_entries();
 
 		private:
 			size_t page_size;
+			size_t max_page_size;
 			size_t n_cache_entries;
 	};
 }

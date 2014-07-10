@@ -50,6 +50,8 @@ namespace giga {
 			// unique ID tracker
 			std::atomic<int> n_opens;
 
+			size_t max_page_size;
+
 			std::string filename;
 			std::string mode;
 
@@ -69,7 +71,6 @@ namespace giga {
 			std::mutex cache_lock;
 			// one lock per cache entry -- static array of size n_cache_entries
 			std::vector<std::shared_ptr<std::mutex>> cache_entry_locks;
-
 			size_t n_cache_entries;
 	};
 
