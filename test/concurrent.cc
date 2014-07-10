@@ -50,7 +50,7 @@ TEST_CASE("concurrent|read") {
 	for(int attempt = 0; attempt < n_attempts; attempt++) {
 		std::shared_ptr<std::string> buffer (new std::string);
 		std::vector<std::thread> threads;
-		std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "r", std::shared_ptr<giga::Config> (new giga::Config(2, 1))));
+		std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "ro", std::shared_ptr<giga::Config> (new giga::Config(2, 1))));
 
 		for(int i = 0; i < n_threads; i++) {
 			threads.push_back(std::thread (aux_read_test_worker, file, result));

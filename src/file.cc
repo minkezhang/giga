@@ -8,7 +8,15 @@
 
 giga::File::File(std::string filename, std::string mode, const std::shared_ptr<giga::Config>& config) {
 	this->filename = filename;
-	this->mode = mode;
+	if(!mode.compare("ro")) {
+		this->mode = "r";
+	} else if(!mode.compare("rw")) {
+		this->mode = "r+";
+	} else if(!mode.compare("wo")) {
+		this->mode = "w";
+	} else {
+		throw(giga::InvalidOperation("giga::File::File", "invalide file mode"));
+	}
 	this->n_clients = 0;
 	this->n_opens = 0;
 
@@ -20,11 +28,13 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	this->head_client = NULL;
 
 	FILE *fp = fopen(filename.c_str(), mode.c_str());
-	if(fp == NULL) {
+	if(fp == NULL && this->mode.compare("r+")) {
 		throw(giga::FileNotFound(this->filename));
-	} else {
-		fclose(fp);
+	// create new file if the mode specifies it
+	} else if(!this->mode.compare("r+")) {
+		fp = fopen(filename.c_str(), "w");
 	}
+	fclose(fp);
 
 	// load page table into memory
 	struct stat stat_buf;
