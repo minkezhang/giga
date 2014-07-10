@@ -4,6 +4,11 @@
 #include <exception>
 #include <string>
 
+/**
+ * the exceptions listed here MAY be called by the user in try / catch blocks
+ *
+ * the author does not see a reason for the user to throw these errors manually
+ */
 namespace giga {
 	class BaseError : public std::exception {
 		public:

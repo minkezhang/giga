@@ -7,6 +7,11 @@
 #include "src/block.h"
 #include "src/global.h"
 
+/**
+ * ClientInfo::ClientInfo and BlockInfo::BlockInfo are internal meta-data designed to ensure the smooth workings of the file instance
+ *
+ * these functions MUST NOT be called by the user
+ */
 namespace giga {
 	class Block;
 

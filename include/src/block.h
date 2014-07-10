@@ -9,6 +9,11 @@
 #include "src/file.h"
 #include "src/global.h"
 
+/**
+ * Block::Block is the memory management module of the library
+ *
+ * these functions MUST NOT be called by the user
+ */
 namespace giga {
 	class File;
 	class Block : public std::enable_shared_from_this<Block> {
