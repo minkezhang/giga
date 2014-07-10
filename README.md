@@ -47,22 +47,30 @@ make test
 
 cf. `test/concurrent.cc` for usage example
 
-Library Structure
+API Structure
 ----
+
+All API calls are guaranteed to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user has 
+not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. Any 
+results due to the use of this library in general are also the sole responsibility of the user.
 
 ```
 ./
-	external/		# external libraries required for compilation
+	external/			# external libraries required for compilation
 		.../
-	include/		# headers
+	include/			# headers
 		libs/
-			.../	# headers from external libraries (symlinked from external/)
-		src/		# src headers
-		test/		# test headers
-	libs/			# source files from external libs (symlinked from external/)
+			.../		# headers from external libraries (symlinked from external/)
+		src/			# src headers
+			...		# do not contain API calls
+			client.h	# contains API calls
+			config.h	# contains API calls
+			file.h		# contains API calls
+		test/			# test headers
+	libs/				# source files from external libs (symlinked from external/)
 		.../
-	src/			# source files for this library
-	test/			# source files for tests
+	src/				# source files for this library
+	test/				# source files for tests
 ```
 
 Internals
