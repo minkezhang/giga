@@ -21,6 +21,7 @@ Thus, we need a file library which can
 
 Current Features
 ----
+* **atomic API calls**
 * object-oriented file framework
 * unit tests covering concurrency usage
 * concurrent and sequential reads implemented
@@ -50,7 +51,7 @@ cf. `test/concurrent.cc` for usage example
 API Structure
 ----
 
-All API calls are *guaranteed* (!) to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user 
+All API calls are **guaranteed** (!) to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user 
 has not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. 
 Any results due to the use of this library in general are also the sole responsibility of the user.
 
