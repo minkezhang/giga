@@ -64,6 +64,7 @@ namespace giga {
 			std::shared_ptr<Block> next;
 
 			std::string data;
+			std::string checksum;
 	};
 }
 
