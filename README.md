@@ -9,10 +9,10 @@ Overview
 `giga` is a concurrent file I/O library which seeks to ameliorate large-file memory problems.
 
 The way in which files are accessed in many languages is to essentially `mmap` the contents of the file into RAM -- but doing so with large files present memory 
-allocation problems that do not have an easy solution. Moreover, as of this project, there is a sparsity of file libraries in the public which implements `File::insert()` 
-and `File::delete()` abstractions -- if a file were to be treated as a string, repeatedly calling file operations which alters the file length will be very inefficient due 
-to the implicit `memcpy` invocations. Finally, there is also a sparsity of file libraries which deal with _concurrent_ file operations, which is becoming an increasingly 
-desired feature in today's multiprocessor environment.
+allocation problems that do not have an easy solution. Moreover, as of this project, there is a sparsity of file libraries in the public which implements 
+`File::insert()` and `File::delete()` abstractions -- if a file were to be treated as a string, repeatedly calling file operations which alters the file length will be 
+very inefficient due to the implicit `memcpy` invocations. Finally, there is also a sparsity of file libraries which deal with _concurrent_ file operations, which is 
+becoming an increasingly desired feature in today's multiprocessor environment.
 
 Thus, we need a file library which can
 * read files in its entirety without needing to allocate `File::size()` of memory space to do so
@@ -50,9 +50,9 @@ cf. `test/concurrent.cc` for usage example
 API Structure
 ----
 
-All API calls are guaranteed to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user has 
-not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. Any 
-results due to the use of this library in general are also the sole responsibility of the user.
+All API calls are *guaranteed* (!) to be atomic and are defined in `include/src/client.h`, `include/src/config.h`, and `include/src/file.h`. Any other calls by the user 
+has not been tested and will not be tested. Any results due to such calls, including but not limited to injury and / or death, are the sole responsibility of the user. 
+Any results due to the use of this library in general are also the sole responsibility of the user.
 
 ```
 ./
