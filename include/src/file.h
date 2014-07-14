@@ -58,6 +58,7 @@ namespace giga {
 
 			// linked list of open clients
 			std::shared_ptr<Client> head_client;
+			std::mutex client_list_lock;
 
 			// data is represented by a linked list -- gives location of the first block of data
 			std::shared_ptr<Block> head_block;

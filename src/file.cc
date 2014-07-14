@@ -15,7 +15,7 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	} else if(!mode.compare("wo")) {
 		this->mode = "w";
 	} else {
-		throw(giga::InvalidOperation("giga::File::File", "invalide file mode"));
+		throw(giga::InvalidOperation("giga::File::File", "invalid file mode"));
 	}
 	this->n_clients = 0;
 	this->n_opens = 0;
@@ -233,82 +233,21 @@ giga::giga_size giga::File::erase(const std::shared_ptr<giga::Client>& client, s
 
 giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, const std::shared_ptr<std::string>& buffer, bool is_insert) {
 	throw(giga::NotImplemented("giga::File::write"));
-	/*
-	client->lock_client();
-	if(client->get_is_closed()) {
-		client->unlock_client();
-		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client"));
-	}
-
-	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
-
-	giga::giga_size n = 0;
-	giga::giga_size offset = 0;
-
-	while(n < n_bytes) {
-		// backup copy of the block being referenced in the cache
-		std::shared_ptr<giga::Block> block = info->get_block();
-
-		try {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
-			this->cache.at(block->get_id());
-		} catch(const std::out_of_range& e) {
-			// this->allocate() automatically locks the cache line
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			this->allocate(block);
-		}
-
-		try {
-			this->cache.at(block->get_id())->increment();
-		} catch(const std::out_of_range& e) {
-			throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while incrementing block access count"));
-		}
-
-		offset = block->read(info->get_block_offset(), buffer, (n_bytes - n));
-		n += offset;
-
-		// a read ended within the same block
-		if(info->get_block_offset() + offset < block->get_size()) {
-			info->set_block_offset(info->get_block_offset() + offset);
-		// a read ended outside the starting block
-		} else if(block->get_next_safe() != NULL) {
-			info->set_block(block->get_next_safe());
-			info->set_block_offset(0);
-		// set EOF
-		} else {
-			info->set_block_offset(info->get_block_offset() + offset);
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			break;
-		}
-
-		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-		block.reset();
-	}
-
-	client->unlock_client();
-	return(n);
-*/
-/*
-	client->lock_client();
-	std::shared_ptr<giga::Block> block = this->head_client[client->get_id()]->get_block();
-
-	if(!block->get_is_loaded()) {
-		this->allocate(block);
-	}
-
-	std::shared_ptr<ClientInfo> info = this->head_client[client->get_id()];
-	giga::giga_size n = info->get_block()->write(info->get_block_offset(), buffer);
-
-	info->set_block_offset(info->get_block_offset() + n);
-	client->unlock_client();
-*/
+	return(0);
 }
 
 std::shared_ptr<giga::Client> giga::File::open() {
 	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(this->head_block));
 	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), c_info, NULL, this->n_opens.fetch_add(1)));
 	if(this->head_client == NULL) {
-		this->head_client = c;
+		// this is clumsy -- fix it
+		this->client_list_lock.lock();
+		if(this->head_client == NULL) {
+			this->head_client = c;
+		} else {
+			this->head_client->insert(c);
+		}
+		this->client_list_lock.unlock();
 	} else {
 		this->head_client->insert(c);
 	}
@@ -320,8 +259,7 @@ std::shared_ptr<giga::Client> giga::File::open() {
 }
 
 void giga::File::close(const std::shared_ptr<giga::Client>& client) {
-	client->set_is_closed();
-	// this->head_client->remove(client);
+	this->head_client->remove(client);
 	this->n_clients--;
 }
 
