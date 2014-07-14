@@ -23,6 +23,30 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 	this->checksum = "";
 }
 
+/**
+ * a client is requesting a read-write on the block
+ */
+void giga::Block::enqueue(int client_id, const std::shared_ptr<giga::ClientInfo>& client_info) {
+	this->lock_queue();
+	try {
+		this->queue.at(client_id);
+		this->unlock_queue();
+		throw(giga::RuntimeError("giga::Block::enqueue", "double enqueue detected"));
+	} catch (const std::out_of_range& e) {
+		this->queue.insert(std::pair<int, std::shared_ptr<giga::ClientInfo>> (client_id, client_info));
+	}
+	this->unlock_queue();
+}
+
+void giga::Block::dequeue(int client_id, const std::shared_ptr<giga::ClientInfo>& client_info) {
+	this->lock_queue();
+	if(!this->queue.erase(client_id)) {
+		this->unlock_queue();
+		throw(giga::RuntimeError("giga::Block::dequeue", "client_id not found"));
+	}
+	this->unlock_queue();
+}
+
 void giga::Block::load(std::string filename, std::string mode) {
 	this->is_loaded = 1;
 
@@ -145,8 +169,11 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 
 void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
 void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
+void giga::Block::lock_queue() { while(this->queue_lock.exchange(true)) {} }
+
 void giga::Block::unlock_prev() { this->prev_lock = false; }
 void giga::Block::unlock_next() { this->next_lock = false; }
+void giga::Block::unlock_queue() { this->queue_lock = false; }
 
 std::shared_ptr<giga::Block> giga::Block::get_prev_unsafe() { return(this->prev); }
 std::shared_ptr<giga::Block> giga::Block::get_next_unsafe() { return(this->next); }

@@ -8,6 +8,7 @@
 
 #include "src/file.h"
 #include "src/global.h"
+#include "src/info.h"
 
 /**
  * Block::Block is the memory management module of the library
@@ -16,6 +17,7 @@
  */
 namespace giga {
 	class File;
+	class ClientInfo;
 	class Block : public std::enable_shared_from_this<Block> {
 		public:
 			Block(giga_size global_offset, size_t size, const std::shared_ptr<Block>& prev, const std::shared_ptr<Block>& next);
@@ -46,8 +48,14 @@ namespace giga {
 
 			void lock_prev();
 			void lock_next();
+			void lock_queue();
+
 			void unlock_prev();
 			void unlock_next();
+			void unlock_queue();
+
+			void enqueue(int client_id, const std::shared_ptr<ClientInfo>& client_info);
+			void dequeue(int client_id, const std::shared_ptr<ClientInfo>& client_info);
 
 		private:
 			giga_size id;
@@ -66,6 +74,9 @@ namespace giga {
 
 			std::string data;
 			std::string checksum;
+
+			std::atomic<bool> queue_lock;
+			std::map<int, std::shared_ptr<ClientInfo>> queue;
 	};
 }
 
