@@ -8,10 +8,17 @@
 
 giga::ClientInfo::ClientInfo(const std::shared_ptr<giga::Block>& block) {
 	this->block = block;
+	this->block_lock = false;
 	this->block_offset = 0;
 }
 
-std::shared_ptr<giga::Block> giga::ClientInfo::get_block() { return(this->block); }
+std::shared_ptr<giga::Block> giga::ClientInfo::get_block() {
+	this->lock_block();
+	std::shared_ptr<giga::Block> r = this->block;
+	this->unlock_block();
+	return(r);
+}
+
 giga::giga_size giga::ClientInfo::get_block_offset() { return(this->block_offset); }
 
 giga::giga_size giga::ClientInfo::get_global_position() {
@@ -23,7 +30,7 @@ giga::giga_size giga::ClientInfo::get_global_position() {
 
 	int global_pos = 0;
 
-	while(block != this->block) {
+	while(block != this->get_block()) {
 		global_pos += block->get_size();
 		block = block->get_next_safe();
 	}
@@ -32,7 +39,9 @@ giga::giga_size giga::ClientInfo::get_global_position() {
 }
 
 void giga::ClientInfo::set_block(const std::shared_ptr<giga::Block>& block) {
+	this->lock_block();
 	this->block = block;
+	this->unlock_block();
 }
 
 /**
@@ -43,13 +52,16 @@ void giga::ClientInfo::set_block(const std::shared_ptr<giga::Block>& block) {
  */
 void giga::ClientInfo::set_block_offset(giga::giga_size block_offset) {
 	std::stringstream buffer;
-	buffer << "invalid offset position (block size " << this->block->get_size() << ", but received offset of " << block_offset << ")";
+	buffer << "invalid offset position (block size " << this->get_block()->get_size() << ", but received offset of " << block_offset << ")";
 
-	if((block_offset > this->block->get_size()) || (block_offset < 0)) {
+	if((block_offset > this->get_block()->get_size()) || (block_offset < 0)) {
 		throw(giga::InvalidOperation("giga::ClientInfo::set_block_offset", buffer.str()));
 	}
 	this->block_offset = block_offset;
 }
+
+void giga::ClientInfo::lock_block() { while(this->block_lock.exchange(true)) {} }
+void giga::ClientInfo::unlock_block() { this->block_lock = false; }
 
 giga::BlockInfo::BlockInfo(const std::shared_ptr<giga::Block>& block) {
 	this->block = block;

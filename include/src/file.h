@@ -73,6 +73,8 @@ namespace giga {
 			// one lock per cache entry -- static array of size n_cache_entries
 			std::vector<std::shared_ptr<std::mutex>> cache_entry_locks;
 			size_t n_cache_entries;
+
+			void acquire_block(const std::shared_ptr<Client>& client);
 	};
 
 }

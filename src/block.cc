@@ -20,6 +20,7 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 	this->is_loaded = 0;
 	this->prev_lock = false;
 	this->next_lock = false;
+	this->queue_lock = false;
 	this->checksum = "";
 }
 

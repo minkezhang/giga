@@ -1,6 +1,7 @@
 #ifndef _INFO_H
 #define _INFO_H
 
+#include <atomic>
 #include <memory>
 #include <mutex>
 
@@ -31,9 +32,12 @@ namespace giga {
 			void set_block_offset(giga_size n_bytes);
 
 		private:
-			std::shared_ptr<Block> block;
-
 			giga_size block_offset;
+
+			std::atomic<bool> block_lock;
+			std::shared_ptr<Block> block;
+			void lock_block();
+			void unlock_block();
 	};
 
 	/**
