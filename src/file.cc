@@ -126,6 +126,22 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
 	return(0);
 }
 
+void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
+	bool success = false;
+	while(!success) {
+		std::shared_ptr<Block> block = client->get_client_info()->get_block();
+		block->enqueue(client->get_id(), client->get_client_info());
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+		try {
+			block->dequeue(client->get_id(), client->get_client_info());
+			success = true;
+		} catch(const giga::RuntimeError& e) {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		}
+	}
+}
+
+
 /**
  * set block_offset as if the current block_offset pointer = 0
  *
