@@ -130,12 +130,24 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	bool success = false;
 	while(!success) {
 		std::shared_ptr<Block> block = client->get_client_info()->get_block();
+		// put in client request
 		block->enqueue(client->get_id(), client->get_client_info());
-		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+		// lock the approprate cache block -- allocate the block if the block is not in cache
 		try {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+			this->cache.at(block->get_id());
+		} catch(const std::out_of_range& e) {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			// side effect of blocking the block cache line here
+			this->allocate(block);
+		}
+		try {
+			// see if the block reference has changed for this client during the time taken to acquire
+			//	the block cache line lock
 			block->dequeue(client->get_id(), client->get_client_info());
 			success = true;
 		} catch(const giga::RuntimeError& e) {
+			// client block reference has moved since Block::enqueue has been called
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 		}
 	}
@@ -163,31 +175,27 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
-	// EOF check
-	if(info->get_block_offset() == info->get_block()->get_size()) {
-		client->unlock_client();
-		return(0);
-	}
-
 	giga::giga_size n = 0;
 	giga::giga_size offset = 0;
 
 	while(n < n_bytes) {
+		this->acquire_block(client);
+
 		// backup copy of the block being referenced in the cache
 		std::shared_ptr<giga::Block> block = info->get_block();
 
-		try {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
-			this->cache.at(block->get_id());
-		} catch(const std::out_of_range& e) {
-			// this->allocate() automatically locks the cache line
+		// EOF check
+		if(info->get_block_offset() == block->get_size()) {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			this->allocate(block);
+			client->unlock_client();
+			return(n);
 		}
 
 		try {
 			this->cache.at(block->get_id())->increment();
 		} catch(const std::out_of_range& e) {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			client->unlock_client();
 			throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while incrementing block access count"));
 		}
 
