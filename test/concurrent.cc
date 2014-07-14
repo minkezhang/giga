@@ -48,7 +48,7 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 }
 
 TEST_CASE("concurrent|read") {
-	int n_threads = 4;
+	int n_threads = 50;
 	int n_attempts = 50000;
 
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
