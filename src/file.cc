@@ -320,7 +320,8 @@ std::shared_ptr<giga::Client> giga::File::open() {
 }
 
 void giga::File::close(const std::shared_ptr<giga::Client>& client) {
-	this->head_client->remove(client);
+	client->set_is_closed();
+	// this->head_client->remove(client);
 	this->n_clients--;
 }
 

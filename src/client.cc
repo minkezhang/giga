@@ -64,6 +64,7 @@ void giga::Client::insert(const std::shared_ptr<giga::Client>& head) {
  * cf. Herlihy and Shavit, "Fine-Grained Synchronization" for reference implementation
  */
 void giga::Client::remove(const std::shared_ptr<giga::Client>& target) {
+	// edge case
 	if(this->get_id() == target->get_id()) {
 		this->set_is_closed();
 		return;

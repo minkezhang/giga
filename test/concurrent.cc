@@ -37,13 +37,19 @@ void aux_read_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std:
 	res += (file->get_n_clients() > 0);
 	file->close(c);
 
-	int expected = 11;
+	try {
+		c->read(buffer, 1);
+	} catch(const giga::InvalidOperation& e) {
+		res++;
+	}
+
+	int expected = 12;
 	*result += (int) (res == expected);
 }
 
 TEST_CASE("concurrent|read") {
-	int n_threads = 50;
-	int n_attempts = 1000;
+	int n_threads = 4;
+	int n_attempts = 50000;
 
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
 
