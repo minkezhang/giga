@@ -130,15 +130,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	bool success = false;
 	while(!success) {
 		std::shared_ptr<Block> block = client->get_client_info()->get_block();
-		// lock the approprate cache block -- allocate the block if the block is not in cache
-		try {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
-			this->cache.at(block->get_id());
-		} catch(const std::out_of_range& e) {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			// side effect of blocking the block cache line here
-			this->allocate(block);
-		}
+		block->lock_data();
 		try {
 			// see if the block reference has changed for this client during the time taken to acquire
 			//	the block cache line lock
@@ -176,50 +168,63 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
+	this->acquire_block(client);
+
+	std::shared_ptr<giga::Block> head_block = info->get_block();
+	std::shared_ptr<giga::Block> block = head_block;
+	std::shared_ptr<giga::Block> tail_block = NULL;
+
 	giga::giga_size n = 0;
-	giga::giga_size offset = 0;
+	giga::giga_size block_n = 0;
+	giga::giga_size block_offset = info->get_block_offset();
 
+	// protect blocks from a simultaneous call to File::write and File::erase
 	while(n < n_bytes) {
-		this->acquire_block(client);
-
-		// backup copy of the block being referenced in the cache
-		std::shared_ptr<giga::Block> block = info->get_block();
-
-		// EOF check
-		if(info->get_block_offset() == block->get_size()) {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			client->unlock_client();
-			return(n);
+		if(block != head_block) {
+			block->lock_data();
 		}
-
-		try {
-			this->cache.at(block->get_id())->increment();
-		} catch(const std::out_of_range& e) {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			client->unlock_client();
-			throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while incrementing block access count"));
-		}
-
-		offset = block->read(info->get_block_offset(), buffer, (n_bytes - n));
-		n += offset;
-
-		// a read ended within the same block
-		if(info->get_block_offset() + offset < block->get_size()) {
-			info->set_block_offset(info->get_block_offset() + offset);
-		// a read ended outside the starting block
-		} else if(block->get_next_safe() != NULL) {
-			info->set_block(block->get_next_safe());
-			info->set_block_offset(0);
-		// set EOF
-		} else {
-			info->set_block_offset(info->get_block_offset() + offset);
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		if(block_offset == block->get_size()) {
+			tail_block = block;
 			break;
 		}
 
-		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-		block.reset();
+		block_n = block->get_size() > n_bytes ? n_bytes : block->get_size();
+		n += block_n;
+
+		if(block_offset + block_n < block->get_size()) {
+			block_offset += block_n;
+		} else if(block->get_next_safe() != NULL) {
+			block = block->get_next_safe();
+			block_offset = 0;
+		} else {
+			block_offset += block_n;
+		}
 	}
+
+	tail_block = block;
+	block = head_block;
+
+	for(block = head_block; block != tail_block; block = block->get_next_safe()) {
+		try {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+			this->cache.at(block->get_id());
+		} catch(const std::out_of_range& e) {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			// side effect of blocking the block cache line here
+			this->allocate(block);
+		}
+		this->cache.at(block->get_id())->increment();
+		block->read(info->get_block_offset(), buffer, (n_bytes - n));
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		block->unlock_data();
+	}
+	block->unlock_data();
+
+	buffer->assign(buffer->substr(info->get_block_offset(), n));
+
+	info->set_block(tail_block);
+	info->set_block_offset(block_offset);
+	tail_block->enqueue(client->get_id(), client->get_client_info());
 
 	client->unlock_client();
 	return(n);
