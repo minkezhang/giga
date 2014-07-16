@@ -48,10 +48,12 @@ namespace giga {
 
 			void lock_prev();
 			void lock_next();
+			void lock_data();
 			void lock_queue();
 
 			void unlock_prev();
 			void unlock_next();
+			void unlock_data();
 			void unlock_queue();
 
 			void enqueue(int client_id, const std::shared_ptr<ClientInfo>& client_info);
@@ -68,6 +70,7 @@ namespace giga {
 			// cf. http://bit.ly/VTIjF0
 			std::atomic<bool> prev_lock;
 			std::atomic<bool> next_lock;
+			std::atomic<bool> data_lock;
 
 			std::shared_ptr<Block> prev;
 			std::shared_ptr<Block> next;

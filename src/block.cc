@@ -20,6 +20,7 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 	this->is_loaded = 0;
 	this->prev_lock = false;
 	this->next_lock = false;
+	this->data_lock = false;
 	this->queue_lock = false;
 	this->checksum = "";
 }
@@ -170,10 +171,12 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 
 void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
 void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
+void giga::Block::lock_data() { while(this->data_lock.exchange(true)) {} }
 void giga::Block::lock_queue() { while(this->queue_lock.exchange(true)) {} }
 
 void giga::Block::unlock_prev() { this->prev_lock = false; }
 void giga::Block::unlock_next() { this->next_lock = false; }
+void giga::Block::unlock_data() { this->data_lock = false; }
 void giga::Block::unlock_queue() { this->queue_lock = false; }
 
 std::shared_ptr<giga::Block> giga::Block::get_prev_unsafe() { return(this->prev); }
