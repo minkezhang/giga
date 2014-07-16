@@ -130,8 +130,6 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	bool success = false;
 	while(!success) {
 		std::shared_ptr<Block> block = client->get_client_info()->get_block();
-		// put in client request
-		block->enqueue(client->get_id(), client->get_client_info());
 		// lock the approprate cache block -- allocate the block if the block is not in cache
 		try {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
@@ -151,6 +149,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 		} catch(const giga::RuntimeError& e) {
 			// client block reference has moved since Block::enqueue has been called
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			client->get_client_info()->get_block()->enqueue(client->get_id(), client->get_client_info());
 		}
 	}
 }
@@ -250,6 +249,10 @@ std::shared_ptr<giga::Client> giga::File::open() {
 		this->client_list_lock.unlock();
 	} else {
 		this->head_client->insert(c);
+	}
+
+	if(this->head_block != NULL) {
+		this->head_block->enqueue(c->get_id(), c_info);
 	}
 
 	c_info.reset();
