@@ -2,6 +2,8 @@
 #include <sys/stat.h>
 #include <vector>
 
+#include <iostream>
+
 #include "src/exception.h"
 
 #include "src/file.h"
@@ -140,12 +142,11 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 			success = true;
 		} catch(const giga::RuntimeError& e) {
 			// client block reference has moved since Block::enqueue has been called
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			block->unlock_data();
 			client->get_client_info()->get_block()->enqueue(client->get_id(), client->get_client_info());
 		}
 	}
 }
-
 
 /**
  * set block_offset as if the current block_offset pointer = 0
@@ -172,19 +173,22 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	std::shared_ptr<giga::Block> head_block = info->get_block();
 	std::shared_ptr<giga::Block> block = head_block;
-	std::shared_ptr<giga::Block> tail_block = NULL;
 
+	giga::giga_size n_iter = 0;
 	giga::giga_size n = 0;
 	giga::giga_size block_n = 0;
 	giga::giga_size block_offset = info->get_block_offset();
 
+	std::cout << "entering while loop" << std::endl;
+
 	// protect blocks from a simultaneous call to File::write and File::erase
 	while(n < n_bytes) {
+		n_iter++;
+		// head_block already locked
 		if(block != head_block) {
 			block->lock_data();
 		}
 		if(block_offset == block->get_size()) {
-			tail_block = block;
 			break;
 		}
 
@@ -201,10 +205,10 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		}
 	}
 
-	tail_block = block;
-	block = head_block;
+	std::cout << "exit while" << std::endl;
 
-	for(block = head_block; block != tail_block; block = block->get_next_safe()) {
+	block = head_block;
+	for(int i = 0; i <= n_iter; i++) {
 		try {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
 			this->cache.at(block->get_id());
@@ -214,17 +218,22 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			this->allocate(block);
 		}
 		this->cache.at(block->get_id())->increment();
-		block->read(info->get_block_offset(), buffer, (n_bytes - n));
-		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		block->read(info->get_block_offset(), buffer, block->get_size());
+
 		block->unlock_data();
+		if(i < n_iter) {
+			block = block->get_next_safe();
+		}
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 	}
-	block->unlock_data();
+
+	std::cout << "exit for" << std::endl;
 
 	buffer->assign(buffer->substr(info->get_block_offset(), n));
 
-	info->set_block(tail_block);
+	info->set_block(block);
 	info->set_block_offset(block_offset);
-	tail_block->enqueue(client->get_id(), client->get_client_info());
+	block->enqueue(client->get_id(), client->get_client_info());
 
 	client->unlock_client();
 	return(n);
