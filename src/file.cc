@@ -132,6 +132,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	bool success = false;
 	while(!success) {
 		std::shared_ptr<Block> block = client->get_client_info()->get_block();
+		std::cout << "locking in acquire: " << block->get_id() << std::endl;
 		block->lock_data();
 		try {
 			// see if the block reference has changed for this client during the time taken to acquire
@@ -154,6 +155,8 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
  * resets buffer to ""
  */
 giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
+	std::cout << "calling giga::File::read" << std::endl;
+
 	// client reads sequentially
 	client->lock_client();
 	if(client->get_is_closed()) {
@@ -174,21 +177,27 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	std::shared_ptr<giga::Block> head_block = info->get_block();
 	std::shared_ptr<giga::Block> block = head_block;
 
-	giga::giga_size n_iter = 0;
+	size_t n_iter = 0;
 	giga::giga_size n = 0;
 	giga::giga_size block_n = 0;
 	giga::giga_size block_offset = info->get_block_offset();
 
-	std::cout << "entering while loop" << std::endl;
-
 	// protect blocks from a simultaneous call to File::write and File::erase
 	while(n < n_bytes) {
 		n_iter++;
+		std::cout << "WHL loop: " << block->get_id() << std::endl;
+
 		// head_block already locked
 		if(block != head_block) {
 			block->lock_data();
 		}
 		if(block_offset == block->get_size()) {
+			/*
+			try {
+				block->unlock_data();
+			} catch(const giga::RuntimeError& e) {
+				throw(giga::RuntimeError("giga::File::read", "unlock error while unlocking EOF block"));
+			}*/
 			break;
 		}
 
@@ -205,10 +214,10 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		}
 	}
 
-	std::cout << "exit while" << std::endl;
-
 	block = head_block;
-	for(int i = 0; i <= n_iter; i++) {
+
+	for(size_t i = 0; i < n_iter; i++) {
+		std::cout << "FOR loop: " << block->get_id() << std::endl;
 		try {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
 			this->cache.at(block->get_id());
@@ -220,14 +229,15 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		this->cache.at(block->get_id())->increment();
 		block->read(info->get_block_offset(), buffer, block->get_size());
 
-		block->unlock_data();
-		if(i < n_iter) {
-			block = block->get_next_safe();
-		}
 		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-	}
+		try {
+			block->unlock_data();
+		} catch(const giga::RuntimeError& e) {
+			throw(giga::RuntimeError("giga::File::read", "unlock error while unlocking during read"));
+		}
 
-	std::cout << "exit for" << std::endl;
+		block = block->get_next_safe();
+	}
 
 	buffer->assign(buffer->substr(info->get_block_offset(), n));
 
