@@ -171,7 +171,7 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 
 void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
 void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
-void giga::Block::lock_data() { std::cout << "locking " << this->get_id() << std::endl; while(this->data_lock.exchange(true)) {} }
+void giga::Block::lock_data() { std::cout << "  locking " << this->get_id() << std::endl; while(this->data_lock.exchange(true)) {} }
 void giga::Block::lock_queue() { while(this->queue_lock.exchange(true)) {} }
 
 void giga::Block::unlock_prev() {
@@ -192,7 +192,7 @@ void giga::Block::unlock_data() {
 	if(!this->data_lock) {
 		throw(giga::RuntimeError("giga::Block::unlock_data", "double unlock detected"));
 	}
-	std::cout << "unlocking " << this->get_id() << std::endl;
+	std::cout << "  unlocking " << this->get_id() << std::endl;
 	this->data_lock = false;
 }
 void giga::Block::unlock_queue() {

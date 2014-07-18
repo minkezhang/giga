@@ -157,32 +157,35 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, const std::shared_ptr<std::string>& buffer, giga::giga_size n_bytes) {
 	std::cout << "calling giga::File::read" << std::endl;
 
-	// client reads sequentially
+	/**
+	 * housekeeping
+	 */
 	client->lock_client();
 	if(client->get_is_closed()) {
 		client->unlock_client();
 		throw(giga::InvalidOperation("giga::File::read", "attempting to read from a closed client"));
 	}
-
 	buffer->assign("");
 	if(this->head_block == NULL) {
 		client->unlock_client();
 		return(0);
 	}
-
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
+
+	// reserves a block and blocks it from concurrent access
 	this->acquire_block(client);
 
 	std::shared_ptr<giga::Block> head_block = info->get_block();
 	std::shared_ptr<giga::Block> block = head_block;
 
-	size_t n_iter = 0;
-	giga::giga_size n = 0;
-	giga::giga_size block_n = 0;
-	giga::giga_size block_offset = info->get_block_offset();
+	size_t n_iter = 1;						// number of blocks traversed
+	giga::giga_size n = 0;						// number of actual bytes read
+	giga::giga_size block_n = 0;					// number of blocks read in a block
+	giga::giga_size block_offset = info->get_block_offset();	// block position to start reading at
 
 	// protect blocks from a simultaneous call to File::write and File::erase
+	//	reserve these blocks before proceeding
 	while(n < n_bytes) {
 		n_iter++;
 		std::cout << "WHL loop: " << block->get_id() << std::endl;
@@ -192,12 +195,6 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			block->lock_data();
 		}
 		if(block_offset == block->get_size()) {
-			/*
-			try {
-				block->unlock_data();
-			} catch(const giga::RuntimeError& e) {
-				throw(giga::RuntimeError("giga::File::read", "unlock error while unlocking EOF block"));
-			}*/
 			break;
 		}
 
@@ -211,6 +208,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			block_offset = 0;
 		} else {
 			block_offset += block_n;
+			break;
 		}
 	}
 
@@ -246,6 +244,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	block->enqueue(client->get_id(), client->get_client_info());
 
 	client->unlock_client();
+	std::cout << "exiting giga::File::read" << std::endl;
 	return(n);
 }
 
