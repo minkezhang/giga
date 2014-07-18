@@ -52,11 +52,12 @@ void giga::ClientInfo::set_block(const std::shared_ptr<giga::Block>& block) {
  */
 void giga::ClientInfo::set_block_offset(giga::giga_size block_offset) {
 	std::stringstream buffer;
-	buffer << "invalid offset position (block size " << this->get_block()->get_size() << ", but received offset of " << block_offset << ")";
 
 	if((block_offset > this->get_block()->get_size()) || (block_offset < 0)) {
+		buffer << "invalid offset position (block size " << this->get_block()->get_size() << ", but received offset of " << block_offset << ")";
 		throw(giga::InvalidOperation("giga::ClientInfo::set_block_offset", buffer.str()));
 	}
+
 	this->block_offset = block_offset;
 }
 

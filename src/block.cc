@@ -171,13 +171,36 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 
 void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
 void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
-void giga::Block::lock_data() { while(this->data_lock.exchange(true)) {} }
+void giga::Block::lock_data() { std::cout << "  locking " << this->get_id() << std::endl; while(this->data_lock.exchange(true)) {} }
 void giga::Block::lock_queue() { while(this->queue_lock.exchange(true)) {} }
 
-void giga::Block::unlock_prev() { this->prev_lock = false; }
-void giga::Block::unlock_next() { this->next_lock = false; }
-void giga::Block::unlock_data() { this->data_lock = false; }
-void giga::Block::unlock_queue() { this->queue_lock = false; }
+void giga::Block::unlock_prev() {
+	if(!this->prev_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_prev", "double unlock detected"));
+	}
+	this->prev_lock = false;
+}
+
+void giga::Block::unlock_next() {
+	if(!this->next_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_next", "double unlock detected"));
+	}
+	this->next_lock = false;
+}
+
+void giga::Block::unlock_data() {
+	if(!this->data_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_data", "double unlock detected"));
+	}
+	std::cout << "  unlocking " << this->get_id() << std::endl;
+	this->data_lock = false;
+}
+void giga::Block::unlock_queue() {
+	if(!this->queue_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_queue", "double unlock detected"));
+	}
+	this->queue_lock = false;
+}
 
 std::shared_ptr<giga::Block> giga::Block::get_prev_unsafe() { return(this->prev); }
 std::shared_ptr<giga::Block> giga::Block::get_next_unsafe() { return(this->next); }
