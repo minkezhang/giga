@@ -293,7 +293,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 
 			this->cache.at(block->get_id())->increment();
 
-			std::shared_ptr<std::string> write_buffer (new std::string(buffer->substr(n, n_bytes - n)));
+			std::shared_ptr<std::string> write_buffer (new std::string(buffer->substr(n, block->get_size())));
 			offset = block->write(info->get_block_offset(), write_buffer, is_insert);
 			n += offset;
 

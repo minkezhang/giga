@@ -135,7 +135,7 @@ giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<
 		this->data.insert(start, *buffer);
 		this->size += buffer->length();
 	} else {
-		this->data.replace(start, buffer->length(), *buffer);
+		this->data.replace(start, ((this->size - start) > buffer->length()) ? buffer->length() : (this->size - start), *buffer);
 	}
 	return(buffer->length());
 }
