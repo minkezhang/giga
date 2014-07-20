@@ -22,8 +22,10 @@ giga::RuntimeError::RuntimeError(std::string func_name, std::string msg) {
 	this->func_name = func_name;
 	this->msg = msg;
 
+	stacktrace::call_stack st;
+
 	std::stringstream buffer;
-	buffer << "RuntimeError(" << this->func_name << "): " << this->func_name << "() -- " << this->msg;
+	buffer << "RuntimeError(" << this->func_name << "): " << this->func_name << "() -- " << this->msg << std::endl << st.to_string();
 	this->buffer = buffer.str();
 }
 

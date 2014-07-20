@@ -51,6 +51,8 @@ TEST_CASE("concurrent|read") {
 	int n_threads = 16;
 	int n_attempts = 1000;
 
+	throw(giga::RuntimeError("blah", "hi"));
+
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
 
 	for(int attempt = 0; attempt < n_attempts; attempt++) {
