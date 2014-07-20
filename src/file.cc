@@ -149,15 +149,6 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 			block->enqueue(client->get_id(), client->get_client_info());
 		}
 	}
-	// lock the approprate cache block -- allocate the block if the block is not in cache
-	try {
-		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
-		this->cache.at(block->get_id());
-	} catch(const std::out_of_range& e) {
-		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-		// side effect of blocking the block cache line here
-		this->allocate(block);
-	}
 }
 
 
@@ -185,11 +176,21 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	giga::giga_size n = 0;
 	giga::giga_size offset = 0;
 
-	while(n < n_bytes) {
-		this->acquire_block(client);
+	this->acquire_block(client);
 
+	while(n < n_bytes) {
 		// backup copy of the block being referenced in the cache
 		std::shared_ptr<giga::Block> block = info->get_block();
+
+		// lock the approprate cache block -- allocate the block if the block is not in cache
+		try {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+			this->cache.at(block->get_id());
+		} catch(const std::out_of_range& e) {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			// side effect of blocking the block cache line here
+			this->allocate(block);
+		}
 
 		// EOF check
 		if(info->get_block_offset() == block->get_size()) {
