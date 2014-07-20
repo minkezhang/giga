@@ -132,7 +132,7 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
  *
  * TODO -- change to File::acquire_block(client, len), and acquire all data locks given by length
  */
-void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
+void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga_size n_bytes) {
 	bool success = false;
 	std::shared_ptr<Block> block;
 	while(!success) {
@@ -155,7 +155,14 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 			block->enqueue(client->get_id(), client->get_client_info());
 		}
 	}
-	block->unlock_data();
+	giga::giga_size n = 0;
+	while((block != NULL) && (n < (n_bytes + client->get_client_info()->get_block_offset()))) {
+		if(block->get_id() != client->get_client_info()->get_block()->get_id()) {
+			block->lock_data();
+		}
+		n += (block->get_size() > (n_bytes - n)) ? (n_bytes - n) : block->get_size();
+		block = block->get_next_safe();
+	}
 }
 
 
@@ -173,7 +180,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	}
 
 	buffer->assign("");
-	if(this->head_block == NULL) {
+	if((this->head_block == NULL) || (n_bytes == 0)) {
 		client->unlock_client();
 		return(0);
 	}
@@ -183,7 +190,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 	giga::giga_size n = 0;
 	giga::giga_size offset = 0;
 
-	this->acquire_block(client);
+	this->acquire_block(client, n_bytes);
 
 	while(n < n_bytes) {
 		// backup copy of the block being referenced in the cache
@@ -202,14 +209,15 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		// EOF check
 		if(info->get_block_offset() == block->get_size()) {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			client->unlock_client();
-			return(n);
+			block->unlock_data();
+			break;
 		}
 
 		try {
 			this->cache.at(block->get_id())->increment();
 		} catch(const std::out_of_range& e) {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			block->unlock_data();
 			client->unlock_client();
 			throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while incrementing block access count"));
 		}
@@ -228,15 +236,16 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		} else {
 			info->set_block_offset(info->get_block_offset() + offset);
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			block->unlock_data();
 			break;
 		}
 
 		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-
-		block.reset();
+		block->unlock_data();
 	}
 
 	client->unlock_client();
+
 	return(n);
 }
 

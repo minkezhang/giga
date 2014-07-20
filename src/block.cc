@@ -1,8 +1,8 @@
+#include <chrono>
 #include <cstdio>
 #include <errno.h>
 #include <sstream>
-
-#include <iostream>
+#include <thread>
 
 #include "libs/md5/md5.h"
 #include "src/crypto.h"
@@ -171,13 +171,37 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 
 void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
 void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
-void giga::Block::lock_data() { while(this->data_lock.exchange(true)) {} }
+void giga::Block::lock_data() {
+	while(this->data_lock.exchange(true)) {
+		std::this_thread::sleep_for(std::chrono::microseconds(1));
+	}
+}
 void giga::Block::lock_queue() { while(this->queue_lock.exchange(true)) {} }
 
-void giga::Block::unlock_prev() { this->prev_lock = false; }
-void giga::Block::unlock_next() { this->next_lock = false; }
-void giga::Block::unlock_data() { this->data_lock = false; }
-void giga::Block::unlock_queue() { this->queue_lock = false; }
+void giga::Block::unlock_prev() {
+	if(!this->prev_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_prev", "double unlock detected"));
+	}
+	this->prev_lock = false;
+}
+void giga::Block::unlock_next() {
+	if(!this->next_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_next", "double unlock detected"));
+	}
+	this->next_lock = false;
+}
+void giga::Block::unlock_data() {
+	if(!this->data_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_data", "double unlock detected"));
+	}
+	this->data_lock = false;
+}
+void giga::Block::unlock_queue() {
+	if(!this->queue_lock) {
+		throw(giga::RuntimeError("giga::Block::unlock_queue", "double unlock detected"));
+	}
+	this->queue_lock = false;
+}
 
 std::shared_ptr<giga::Block> giga::Block::get_prev_unsafe() { return(this->prev); }
 std::shared_ptr<giga::Block> giga::Block::get_next_unsafe() { return(this->next); }
