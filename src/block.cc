@@ -124,6 +124,7 @@ giga::giga_size giga::Block::erase(giga::giga_size start, size_t len) {
 	this->is_dirty = 1;
 	this->global_offset = 0;
 	this->data.erase(start, len);
+	this->size -= len;
 	return(len);
 }
 
