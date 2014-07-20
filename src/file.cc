@@ -138,17 +138,24 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	while(!success) {
 		block = client->get_client_info()->get_block();
 		try {
-			// see if the block reference has changed for this client during the time taken to acquire
-			//	the block cache line lock
-			//	on call to Block::insert, the given block will /delete/ from its queue all clients
-			//	whose block reference has changed -- this tests for that and tries again
+			/**
+			 * see if the block reference has changed for this client during the time taken to acquire
+			 *	the block cache line lock
+			 *
+			 * on call to Block::insert, the given block will DELETE from its queue all clients
+			 *	whose block reference has changed, and will call ClientInfo::set_block to set the new block reference;
+			 *	this tests for that and tries again
+			 */
+			block->lock_data();
 			block->dequeue(client->get_id(), client->get_client_info());
 			success = true;
 		} catch(const giga::RuntimeError& e) {
+			block->unlock_data();
 			// put in client request
 			block->enqueue(client->get_id(), client->get_client_info());
 		}
 	}
+	block->unlock_data();
 }
 
 
@@ -225,6 +232,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		}
 
 		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+
 		block.reset();
 	}
 
