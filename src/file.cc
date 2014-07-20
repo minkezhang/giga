@@ -154,11 +154,13 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 	}
 
 	giga::giga_size n = 0;
-	while((block != NULL) && (n < (n_bytes + client->get_client_info()->get_block_offset()))) {
+	giga::giga_size offset = client->get_client_info()->get_block_offset();
+	while((block != NULL) && (n < n_bytes)) {
 		if(block->get_id() != client->get_client_info()->get_block()->get_id()) {
 			block->lock_data();
 		}
-		n += (block->get_size() > (n_bytes - n)) ? (n_bytes - n) : block->get_size();
+		n += (block->get_size() - offset > (n_bytes - n)) ? (n_bytes - n) : block->get_size();
+		offset = 0;
 		block = block->get_next_safe();
 	}
 }
