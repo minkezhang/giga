@@ -126,21 +126,15 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
 	return(0);
 }
 
+/**
+ * lock the block(s) for data editing -- no other read/writes can occur at the same time on these blocks
+ * File::acquire_block(client, len);
+ */
 void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	bool success = false;
+	std::shared_ptr<Block> block;
 	while(!success) {
-		std::shared_ptr<Block> block = client->get_client_info()->get_block();
-		// put in client request
-		block->enqueue(client->get_id(), client->get_client_info());
-		// lock the approprate cache block -- allocate the block if the block is not in cache
-		try {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
-			this->cache.at(block->get_id());
-		} catch(const std::out_of_range& e) {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			// side effect of blocking the block cache line here
-			this->allocate(block);
-		}
+		block = client->get_client_info()->get_block();
 		try {
 			// see if the block reference has changed for this client during the time taken to acquire
 			//	the block cache line lock
@@ -149,9 +143,18 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 			block->dequeue(client->get_id(), client->get_client_info());
 			success = true;
 		} catch(const giga::RuntimeError& e) {
-			// client block reference has moved since Block::enqueue has been called
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			// put in client request
+			block->enqueue(client->get_id(), client->get_client_info());
 		}
+	}
+	// lock the approprate cache block -- allocate the block if the block is not in cache
+	try {
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+		this->cache.at(block->get_id());
+	} catch(const std::out_of_range& e) {
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		// side effect of blocking the block cache line here
+		this->allocate(block);
 	}
 }
 
@@ -239,6 +242,10 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 std::shared_ptr<giga::Client> giga::File::open() {
 	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(this->head_block));
 	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), c_info, NULL, this->n_opens.fetch_add(1)));
+	// set block reference on the block side
+	if(this->head_block != NULL) {
+		this->head_block->enqueue(c->get_id(), c->get_client_info());
+	}
 	if(this->head_client == NULL) {
 		// this is clumsy -- fix it
 		this->client_list_lock.lock();
