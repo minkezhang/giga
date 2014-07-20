@@ -128,7 +128,9 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
 
 /**
  * lock the block(s) for data editing -- no other read/writes can occur at the same time on these blocks
- * File::acquire_block(client, len);
+ * ensures that the block pointed to by ClientInfo::get_block can only be edited by the given client
+ *
+ * TODO -- change to File::acquire_block(client, len), and acquire all data locks given by length
  */
 void giga::File::acquire_block(const std::shared_ptr<Client>& client) {
 	bool success = false;
