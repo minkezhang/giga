@@ -115,15 +115,14 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  * set the client block and blockoffset that corresponds to the global pos input
  * lock client list while doing so
  */
-giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
+void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
 	throw(giga::NotImplemented("giga::File::seek"));
 	/*
 	this->pause();
-	giga_size result = 0;
+	this->acquire_block(client, 0);
+	client->get_client_info()->get_block()->unlock_data();
 	this->unpause();
-	return(result);
 	*/
-	return(0);
 }
 
 /**

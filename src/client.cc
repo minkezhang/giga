@@ -34,8 +34,8 @@ giga::giga_size giga::Client::get_pos() {
 	return(this->file->get_client_pos(this->shared_from_this()));
 }
 
-giga::giga_size giga::Client::seek(giga::giga_size global_pos) {
-	return(this->file->seek(this->shared_from_this(), global_pos));
+void giga::Client::seek(giga::giga_size global_pos) {
+	this->file->seek(this->shared_from_this(), global_pos);
 }
 
 void giga::Client::lock_client() { this->client_lock.lock(); }

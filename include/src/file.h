@@ -40,7 +40,7 @@ namespace giga {
 			~File();
 			std::shared_ptr<Client> get_client_list();
 			giga_size get_client_pos(const std::shared_ptr<Client>& client);
-			giga_size seek(const std::shared_ptr<Client>& client, giga_size global_pos);
+			void seek(const std::shared_ptr<Client>& client, giga_size global_pos);
 			giga_size read(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
 			giga_size write(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, bool is_insert);
 			giga_size erase(const std::shared_ptr<Client>& client, size_t len);

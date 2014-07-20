@@ -32,7 +32,7 @@ namespace giga {
 			 */
 			int get_id();
 			giga_size get_pos();
-			giga_size seek(giga_size global_pos);
+			void seek(giga_size global_pos);
 			giga_size read(const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
 			giga_size write(const std::shared_ptr<std::string>& buffer, bool is_insert);
 			giga_size erase(size_t len);
