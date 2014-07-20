@@ -129,8 +129,6 @@ giga::giga_size giga::File::seek(const std::shared_ptr<giga::Client>& client, gi
 /**
  * lock the block(s) for data editing -- no other read/writes can occur at the same time on these blocks
  * ensures that the block pointed to by ClientInfo::get_block can only be edited by the given client
- *
- * TODO -- change to File::acquire_block(client, len), and acquire all data locks given by length
  */
 void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga_size n_bytes) {
 	bool success = false;
@@ -213,14 +211,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			break;
 		}
 
-		try {
-			this->cache.at(block->get_id())->increment();
-		} catch(const std::out_of_range& e) {
-			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
-			block->unlock_data();
-			client->unlock_client();
-			throw(giga::RuntimeError("giga::File::read", "std::out_of_range thrown while incrementing block access count"));
-		}
+		this->cache.at(block->get_id())->increment();
 
 		offset = block->read(info->get_block_offset(), buffer, (n_bytes - n));
 		n += offset;
@@ -244,6 +235,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		block->unlock_data();
 	}
 
+	info->get_block()->enqueue(client->get_id(), info);
 	client->unlock_client();
 
 	return(n);
@@ -269,12 +261,60 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
-	// giga::giga_size n = 0;
-	// giga::giga_size offset = 0;
-
 	// overwrite
 	if(!is_insert) {
-		// this->acquire_block(client, buffer->length());
+		giga::giga_size n = 0;
+		giga::giga_size offset = 0;
+
+		giga::giga_size n_bytes = buffer->length();
+
+		this->acquire_block(client, n_bytes);
+
+		while(n < n_bytes) {
+			// backup copy of the block being referenced in the cache
+			std::shared_ptr<giga::Block> block = info->get_block();
+
+			// lock the approprate cache block -- allocate the block if the block is not in cache
+			try {
+				this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+				this->cache.at(block->get_id());
+			} catch(const std::out_of_range& e) {
+				this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+				// side effect of blocking the block cache line here
+				this->allocate(block);
+			}
+
+			// EOF check
+			if(info->get_block_offset() == block->get_size()) {
+				this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+				block->unlock_data();
+				break;
+			}
+
+			this->cache.at(block->get_id())->increment();
+
+			std::shared_ptr<std::string> write_buffer (new std::string(buffer->substr(n, n_bytes - n)));
+			offset = block->write(info->get_block_offset(), write_buffer, is_insert);
+			n += offset;
+
+			// a read ended within the same block
+			if(info->get_block_offset() + offset < block->get_size()) {
+				info->set_block_offset(info->get_block_offset() + offset);
+			// a read ended outside the starting block
+			} else if(block->get_next_safe() != NULL) {
+				info->set_block(block->get_next_safe());
+				info->set_block_offset(0);
+			// set EOF
+			} else {
+				info->set_block_offset(info->get_block_offset() + offset);
+				this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+				block->unlock_data();
+				break;
+			}
+
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			block->unlock_data();
+		}
 	} else {
 		client->unlock_client();
 		throw(giga::NotImplemented("giga::File::write(is_insert == true)"));

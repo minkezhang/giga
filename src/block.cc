@@ -133,6 +133,7 @@ giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<
 	this->global_offset = 0;
 	if(is_insert) {
 		this->data.insert(start, *buffer);
+		this->size += buffer->length();
 	} else {
 		this->data.replace(start, buffer->length(), *buffer);
 	}
