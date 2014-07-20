@@ -4,6 +4,10 @@
 #include <sstream>
 #include <thread>
 
+#include <iostream>
+
+#include "libs/stacktrace/call_stack.hpp"
+
 #include "libs/md5/md5.h"
 #include "src/crypto.h"
 #include "src/exception.h"
@@ -174,6 +178,8 @@ void giga::Block::insert(const std::shared_ptr<giga::Block>& head, const std::sh
 void giga::Block::lock_prev() { while(this->prev_lock.exchange(true)) {} }
 void giga::Block::lock_next() { while(this->next_lock.exchange(true)) {} }
 void giga::Block::lock_data() {
+	stacktrace::call_stack st;
+	std::cout << "locking block " << this->get_id() << std::endl << st.to_string() << std::endl;
 	while(this->data_lock.exchange(true)) {
 		std::this_thread::sleep_for(std::chrono::microseconds(1));
 	}
@@ -193,6 +199,7 @@ void giga::Block::unlock_next() {
 	this->next_lock = false;
 }
 void giga::Block::unlock_data() {
+	std::cout << "unlocking block " << this->get_id() << std::endl;
 	if(!this->data_lock) {
 		throw(giga::RuntimeError("giga::Block::unlock_data", "double unlock detected"));
 	}

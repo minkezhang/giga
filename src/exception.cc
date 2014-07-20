@@ -1,7 +1,5 @@
 #include <sstream>
 
-#include <iostream>
-
 #include "libs/stacktrace/call_stack.hpp"
 #include "libs/stacktrace/stack_exception.hpp"
 

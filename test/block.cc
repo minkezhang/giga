@@ -17,6 +17,11 @@ TEST_CASE("block|write") {
 	std::shared_ptr<giga::Client> c_five_read = file_five->open();
 
 	REQUIRE(c_five->write(buffer, false) == 3);
+	std::cout << "finished c_five->write" << std::endl;
+	REQUIRE(c_five->read(buffer, 1) == 1);
+	std::cout << "finished c_five->read" << std::endl;
+	REQUIRE(buffer->compare("d") == 0);
+	std::cout << "finished c_five->buffer->compare" << std::endl;
 
 	REQUIRE(c_five_read->read(buffer, 10) == 5);
 	REQUIRE(buffer->compare("blad\n") == 0);

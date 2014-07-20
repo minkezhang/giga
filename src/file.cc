@@ -152,6 +152,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 			block->enqueue(client->get_id(), client->get_client_info());
 		}
 	}
+
 	giga::giga_size n = 0;
 	while((block != NULL) && (n < (n_bytes + client->get_client_info()->get_block_offset()))) {
 		if(block->get_id() != client->get_client_info()->get_block()->get_id()) {
@@ -250,7 +251,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 	client->lock_client();
 	if(client->get_is_closed()) {
 		client->unlock_client();
-		throw(giga::InvalidOperation("giga::File::write", "attempting to read from a closed client"));
+		throw(giga::InvalidOperation("giga::File::write", "attempting to write from a closed client"));
 	}
 
 	if(this->head_block == NULL) {
@@ -260,11 +261,11 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
+	giga::giga_size n = 0;
+	giga::giga_size offset = 0;
+
 	// overwrite
 	if(!is_insert) {
-		giga::giga_size n = 0;
-		giga::giga_size offset = 0;
-
 		giga::giga_size n_bytes = buffer->length();
 
 		this->acquire_block(client, n_bytes);
@@ -296,10 +297,10 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 			offset = block->write(info->get_block_offset(), write_buffer, is_insert);
 			n += offset;
 
-			// a read ended within the same block
+			// a write ended within the same block
 			if(info->get_block_offset() + offset < block->get_size()) {
 				info->set_block_offset(info->get_block_offset() + offset);
-			// a read ended outside the starting block
+			// a write ended outside the starting block
 			} else if(block->get_next_safe() != NULL) {
 				info->set_block(block->get_next_safe());
 				info->set_block_offset(0);
@@ -318,8 +319,9 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 		client->unlock_client();
 		throw(giga::NotImplemented("giga::File::write(is_insert == true)"));
 	}
+
 	client->unlock_client();
-	return(buffer->length());
+	return(n);
 }
 
 std::shared_ptr<giga::Client> giga::File::open() {
