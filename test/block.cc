@@ -9,6 +9,18 @@
 #include "src/exception.h"
 #include "src/file.h"
 
+TEST_CASE("block|write") {
+	std::shared_ptr<std::string> buffer (new std::string("blah"));
+
+	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "rw", std::shared_ptr<giga::Config> (new giga::Config(2, 2, 1))));
+	std::shared_ptr<giga::Client> c_five = file_five->open();
+
+	REQUIRE(c_five->write(buffer, false) == 4);
+
+	file_five->close(c_five);
+	REQUIRE_THROWS_AS(c_five->write(buffer, true), giga::InvalidOperation);
+}
+
 TEST_CASE("block|read") {
 	std::shared_ptr<std::string> buffer (new std::string);
 

@@ -29,11 +29,11 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	this->head_client = NULL;
 
 	FILE *fp = fopen(filename.c_str(), mode.c_str());
-	if(fp == NULL && this->mode.compare("r+")) {
+	if((fp == NULL) && this->mode.compare("r+")) {
 		throw(giga::FileNotFound(this->filename));
 	// create new file if the mode specifies it
-	} else if(!this->mode.compare("r+")) {
-		fp = fopen(filename.c_str(), "w");
+	} else if((fp == NULL) && !this->mode.compare("r+")) {
+		fp = fopen(filename.c_str(), "w+");
 	}
 	fclose(fp);
 
@@ -255,8 +255,32 @@ giga::giga_size giga::File::erase(const std::shared_ptr<giga::Client>& client, s
 }
 
 giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, const std::shared_ptr<std::string>& buffer, bool is_insert) {
-	throw(giga::NotImplemented("giga::File::write"));
-	return(0);
+	// client reads sequentially
+	client->lock_client();
+	if(client->get_is_closed()) {
+		client->unlock_client();
+		throw(giga::InvalidOperation("giga::File::write", "attempting to read from a closed client"));
+	}
+
+	if(this->head_block == NULL) {
+		client->unlock_client();
+		return(0);
+	}
+
+	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
+
+	// giga::giga_size n = 0;
+	// giga::giga_size offset = 0;
+
+	// overwrite
+	if(!is_insert) {
+		// this->acquire_block(client, buffer->length());
+	} else {
+		client->unlock_client();
+		throw(giga::NotImplemented("giga::File::write(is_insert == true)"));
+	}
+	client->unlock_client();
+	return(buffer->length());
 }
 
 std::shared_ptr<giga::Client> giga::File::open() {
