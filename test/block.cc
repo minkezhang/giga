@@ -7,6 +7,29 @@
 #include "src/exception.h"
 #include "src/file.h"
 
+TEST_CASE("block|seek") {
+	std::shared_ptr<giga::File> file_five (new giga::File("test/files/five.txt", "rw", std::shared_ptr<giga::Config> (new giga::Config(2, 2, 1))));
+	std::shared_ptr<giga::Client> c_five = file_five->open();
+
+	REQUIRE(c_five->get_pos() == 0);
+	c_five->seek(1);
+	REQUIRE(c_five->get_pos() == 1);
+	c_five->seek(0);
+	REQUIRE(c_five->get_pos() == 1);
+	c_five->seek(3);
+	REQUIRE(c_five->get_pos() == 4);
+/*
+	c_five->seek(-3);
+	REQUIRE(c_five->get_pos() == 1);
+	c_five->seek(10);
+	REQUIRE(c_five->get_pos() == 4);
+*/
+
+	file_five->close(c_five);
+	REQUIRE_THROWS_AS(c_five->seek(0), giga::InvalidOperation);
+	REQUIRE_THROWS_AS(c_five->get_pos(), giga::InvalidOperation);
+}
+
 TEST_CASE("block|write") {
 	std::shared_ptr<std::string> buffer (new std::string("bla"));
 

@@ -2,6 +2,8 @@
 #include <sys/stat.h>
 #include <vector>
 
+#include <iostream>
+
 #include "src/exception.h"
 
 #include "src/file.h"
@@ -94,17 +96,15 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 	}
 
 	this->cache_lock.lock();
-
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->lock();
 	}
 
-	giga_size result = client->get_client_info()->get_global_position();
+	giga::giga_size result = client->get_client_info()->get_global_position();
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->unlock();
 	}
-
 	this->cache_lock.unlock();
 	client->unlock_client();
 
@@ -113,16 +113,81 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
 
 /**
  * set the client block and blockoffset that corresponds to the global pos input
- * lock client list while doing so
+ *
+ * this implements a RELATIVE seek
  */
 void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
-	throw(giga::NotImplemented("giga::File::seek"));
-	/*
-	this->pause();
-	this->acquire_block(client, 0);
-	client->get_client_info()->get_block()->unlock_data();
-	this->unpause();
-	*/
+	std::cout << "entering" << std::endl;
+	// cannot make changes to the document while calculating global position
+	client->lock_client();
+
+	if(client->get_is_closed()) {
+		client->unlock_client();
+		throw(giga::InvalidOperation("giga::File::get_client_pos", "attempting to read from a closed client"));
+	}
+
+	if(global_pos < 0) {
+		client->unlock_client();
+		throw(giga::NotImplemented("giga::File::get_client_pos(global_pos < 0)"));
+	}
+
+	if(global_pos == 0) {
+		client->unlock_client();
+		return;
+	}
+
+	this->cache_lock.lock();
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->lock();
+	}
+
+	std::cout << "acquired all locks" << std::endl;
+
+	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
+	std::shared_ptr<giga::Block> block = info->get_block();
+	info->get_block()->dequeue(client->get_id(), info);
+
+	giga::giga_size result = info->get_global_position();
+	giga::giga_size cur_pos = result;
+	giga::giga_size block_offset = info->get_block_offset();
+
+	if(global_pos > 0) {
+		std::cout << "cur_pos -- " << cur_pos << ", result -- " << result << ", global_pos -- " << global_pos << std::endl; // minke
+		while(cur_pos < result + global_pos) {
+			std::cout << "looping" << std::endl;
+			giga::giga_size n_bytes = block->get_size() - block_offset;
+			if((cur_pos + n_bytes) > (result + global_pos)) {
+				block_offset = block_offset + (cur_pos + n_bytes) - (result + global_pos);
+				break;
+			} else {
+				cur_pos += n_bytes;
+				block_offset = 0;
+				if(block->get_next_safe() != NULL) {
+					block = block->get_next_safe();
+				} else {
+					block_offset = block->get_size();
+					break;
+				}
+			}
+		}
+	} else {
+		/*
+		while(cur_pos > result + global_pos) {
+		}
+		*/
+	}
+
+	info->set_block_offset(block_offset);
+	info->set_block(block);
+	info->get_block()->enqueue(client->get_id(), info);
+
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->unlock();
+	}
+	this->cache_lock.unlock();
+	client->unlock_client();
+	std::cout << "exiting" << std::endl;
+	return;
 }
 
 /**
@@ -145,6 +210,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 			 */
 			block->lock_data();
 			block->dequeue(client->get_id(), client->get_client_info());
+			block->enqueue(client->get_id(), client->get_client_info());
 			success = true;
 		} catch(const giga::RuntimeError& e) {
 			block->unlock_data();
@@ -223,6 +289,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			info->set_block_offset(info->get_block_offset() + offset);
 		// a read ended outside the starting block
 		} else if(block->get_next_safe() != NULL) {
+			block->dequeue(client->get_id(), client->get_client_info());
 			info->set_block(block->get_next_safe());
 			info->set_block_offset(0);
 		// set EOF
@@ -304,6 +371,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 				info->set_block_offset(info->get_block_offset() + offset);
 			// a write ended outside the starting block
 			} else if(block->get_next_safe() != NULL) {
+				block->dequeue(client->get_id(), client->get_client_info());
 				info->set_block(block->get_next_safe());
 				info->set_block_offset(0);
 			// set EOF
