@@ -18,12 +18,12 @@ TEST_CASE("block|seek") {
 	REQUIRE(c_five->get_pos() == 1);
 	c_five->seek(3);
 	REQUIRE(c_five->get_pos() == 4);
-/*
 	c_five->seek(-3);
 	REQUIRE(c_five->get_pos() == 1);
 	c_five->seek(10);
-	REQUIRE(c_five->get_pos() == 4);
-*/
+	REQUIRE(c_five->get_pos() == 5);
+	c_five->seek(-10);
+	REQUIRE(c_five->get_pos() == 0);
 
 	file_five->close(c_five);
 	REQUIRE_THROWS_AS(c_five->seek(0), giga::InvalidOperation);

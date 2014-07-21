@@ -117,18 +117,12 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  * this implements a RELATIVE seek
  */
 void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
-	std::cout << "entering" << std::endl;
 	// cannot make changes to the document while calculating global position
 	client->lock_client();
 
 	if(client->get_is_closed()) {
 		client->unlock_client();
 		throw(giga::InvalidOperation("giga::File::get_client_pos", "attempting to read from a closed client"));
-	}
-
-	if(global_pos < 0) {
-		client->unlock_client();
-		throw(giga::NotImplemented("giga::File::get_client_pos(global_pos < 0)"));
 	}
 
 	if(global_pos == 0) {
@@ -141,8 +135,6 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 		this->cache_entry_locks.at(i)->lock();
 	}
 
-	std::cout << "acquired all locks" << std::endl;
-
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 	std::shared_ptr<giga::Block> block = info->get_block();
 	info->get_block()->dequeue(client->get_id(), info);
@@ -152,9 +144,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 	giga::giga_size block_offset = info->get_block_offset();
 
 	if(global_pos > 0) {
-		std::cout << "cur_pos -- " << cur_pos << ", result -- " << result << ", global_pos -- " << global_pos << std::endl; // minke
 		while(cur_pos < result + global_pos) {
-			std::cout << "looping" << std::endl;
 			giga::giga_size n_bytes = block->get_size() - block_offset;
 			if((cur_pos + n_bytes) > (result + global_pos)) {
 				block_offset = block_offset + (cur_pos + n_bytes) - (result + global_pos);
@@ -171,10 +161,21 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 			}
 		}
 	} else {
-		/*
 		while(cur_pos > result + global_pos) {
+			giga::giga_size n_bytes = block_offset + 1;
+			if((cur_pos - n_bytes) < (result + global_pos)) {
+				break;
+			} else {
+				cur_pos -= n_bytes;
+				if(block->get_prev_safe() != NULL) {
+					block = block->get_prev_safe();
+					block_offset = block->get_size() - 1;
+				} else {
+					block_offset = 0;
+					break;
+				}
+			}
 		}
-		*/
 	}
 
 	info->set_block_offset(block_offset);
@@ -186,7 +187,6 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 	}
 	this->cache_lock.unlock();
 	client->unlock_client();
-	std::cout << "exiting" << std::endl;
 	return;
 }
 
