@@ -136,8 +136,8 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 	}
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
+	this->acquire_block(client, 0);
 	std::shared_ptr<giga::Block> block = info->get_block();
-	info->get_block()->dequeue(client->get_id(), info);
 
 	giga::giga_size result = info->get_global_position();
 	giga::giga_size cur_pos = result;
@@ -184,6 +184,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 	}
 
 	info->set_block_offset(block_offset);
+	info->get_block()->unlock_data();
 	info->set_block(block);
 	info->get_block()->enqueue(client->get_id(), info);
 
@@ -215,7 +216,6 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 			 */
 			block->lock_data();
 			block->dequeue(client->get_id(), client->get_client_info());
-			block->enqueue(client->get_id(), client->get_client_info());
 			success = true;
 		} catch(const giga::RuntimeError& e) {
 			block->unlock_data();
@@ -294,7 +294,6 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			info->set_block_offset(info->get_block_offset() + offset);
 		// a read ended outside the starting block
 		} else if(block->get_next_safe() != NULL) {
-			block->dequeue(client->get_id(), client->get_client_info());
 			info->set_block(block->get_next_safe());
 			info->set_block_offset(0);
 		// set EOF
@@ -376,7 +375,6 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 				info->set_block_offset(info->get_block_offset() + offset);
 			// a write ended outside the starting block
 			} else if(block->get_next_safe() != NULL) {
-				block->dequeue(client->get_id(), client->get_client_info());
 				info->set_block(block->get_next_safe());
 				info->set_block_offset(0);
 			// set EOF
