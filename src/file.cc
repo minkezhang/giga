@@ -186,7 +186,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 	info->set_block_offset(block_offset);
 	info->get_block()->unlock_data();
 	info->set_block(block);
-	info->get_block()->enqueue(client->get_id(), info);
+	block->enqueue(client->get_id(), info);
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->unlock();

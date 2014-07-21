@@ -27,15 +27,13 @@ void aux_write_overwrite_test_worker(std::shared_ptr<giga::File> file, std::shar
 	res += (buffer->compare("d\n") == 0);
 
 	c->seek(-10);
-	std::cout << "seek" << std::endl;
 	res += (c->get_pos() == 0);
-	std::cout << "get_pos" << std::endl;
 	res += (c->read(buffer, 10) == 5);
 	res += (buffer->compare("blad\n") == 0);
 
 	file->close(c);
 
-	int expected = 7;
+	int expected = 8;
 	*result += (int) (res == expected);
 }
 
@@ -150,4 +148,3 @@ TEST_CASE("concurrent|write-overwrite") {
 
 	REQUIRE(*result == n_attempts * n_threads);
 }
-
