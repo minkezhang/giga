@@ -145,16 +145,20 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 
 	if(global_pos > 0) {
 		while(cur_pos < result + global_pos) {
+			// calculate the number of bytes advanced by the pointer
 			giga::giga_size n_bytes = block->get_size() - block_offset;
+			// advanced a satisfactory number of bytes
 			if((cur_pos + n_bytes) > (result + global_pos)) {
 				block_offset = block_offset + (cur_pos + n_bytes) - (result + global_pos);
 				break;
 			} else {
+				// advance pointer
 				cur_pos += n_bytes;
 				block_offset = 0;
 				if(block->get_next_safe() != NULL) {
 					block = block->get_next_safe();
 				} else {
+					// EOF
 					block_offset = block->get_size();
 					break;
 				}
@@ -171,6 +175,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 					block = block->get_prev_safe();
 					block_offset = block->get_size() - 1;
 				} else {
+					// beginning of the file
 					block_offset = 0;
 					break;
 				}
