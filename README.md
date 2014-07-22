@@ -25,12 +25,14 @@ Current Features
 * object-oriented file framework
 * unit tests covering concurrency usage
 * concurrent and sequential reads implemented
+* concurrent and sequential overwrites implemented
+* relative seeks implemented
 * read-only, read-write, write-only mode abstraction
 
 Planned Features
 ----
-* `overwrite(buf)` (cf. `fwrite(..., buf, ...)`), `insert(buf)`, and `erase(n)` write modes
-* `seek(n)`, `save()`
+* `insert(buf)`, and `erase(n)` write modes
+* `save()`
 * possible network integration
 * performance testing
 * change internal file representation to be more scalable
