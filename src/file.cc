@@ -130,14 +130,14 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 		return;
 	}
 
+	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
+	this->acquire_block(client, 0);
+	std::shared_ptr<giga::Block> block = info->get_block();
+
 	this->cache_lock.lock();
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->lock();
 	}
-
-	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
-	this->acquire_block(client, 0);
-	std::shared_ptr<giga::Block> block = info->get_block();
 
 	giga::giga_size result = info->get_global_position();
 	giga::giga_size cur_pos = result;
