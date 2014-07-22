@@ -24,14 +24,16 @@ Current Features
 * **atomic API calls**
 * object-oriented file framework
 * unit tests covering concurrency usage
-* concurrent and sequential reads implemented
-* concurrent and sequential overwrites implemented
-* relative seeks implemented
+* implemented sequential and concurrent reads: `Client::read`
+* implemented sequential and concurrent overwrites: `Client::write(..., is_insert = false)`
+* implemented sequential inserts: `Client::write(..., is_insert = true)`
+* implemented relative seeks in file: `Client::seek`
 * read-only, read-write, write-only mode abstraction
 
 Planned Features
 ----
-* `insert(buf)`, and `erase(n)` write modes
+* concurrency tests for `Client::write(..., is_insert = true)`
+* implement `erase(n)`
 * `save()`
 * possible network integration
 * performance testing
