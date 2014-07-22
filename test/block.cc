@@ -44,6 +44,10 @@ TEST_CASE("block|write-insert") {
 	REQUIRE(c_five_read->read(buffer, 10) == 8);
 	REQUIRE(buffer->compare("blaabcd\n") == 0);
 
+	c_five->seek(-10);
+	REQUIRE(c_five->read(buffer, 3) == 3);
+	REQUIRE(buffer->compare("bla") == 0);
+
 	file_five->close(c_five);
 	file_five->close(c_five_read);
 }
