@@ -389,8 +389,22 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 			block->unlock_data();
 		}
 	} else {
-		client->unlock_client();
-		throw(giga::NotImplemented("giga::File::write(is_insert == true)"));
+		this->acquire_block(client, 0);
+		std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
+		std::shared_ptr<giga::Block> block = info->get_block();
+		// lock the approprate cache block -- allocate the block if the block is not in cache
+		try {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+			this->cache.at(block->get_id());
+		} catch(const std::out_of_range& e) {
+			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+			// side effect of blocking the block cache line here
+			this->allocate(block);
+		}
+		n = block->write(info->get_block_offset(), buffer, is_insert);
+		info->set_block_offset(info->get_block_offset() + n);
+		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		block->unlock_data();
 	}
 
 	client->unlock_client();
