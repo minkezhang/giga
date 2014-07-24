@@ -116,7 +116,7 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  *
  * this implements a RELATIVE seek
  */
-void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size global_pos) {
+void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size offset) {
 	// cannot make changes to the document while calculating global position
 	client->lock_client();
 
@@ -125,7 +125,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 		throw(giga::InvalidOperation("giga::File::get_client_pos", "attempting to read from a closed client"));
 	}
 
-	if(global_pos == 0) {
+	if(offset == 0) {
 		client->unlock_client();
 		return;
 	}
@@ -143,13 +143,13 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 	giga::giga_size cur_pos = result;
 	giga::giga_size block_offset = info->get_block_offset();
 
-	if(global_pos > 0) {
-		while(cur_pos < result + global_pos) {
+	if(offset > 0) {
+		while(cur_pos < result + offset) {
 			// calculate the number of bytes advanced by the pointer
 			giga::giga_size n_bytes = block->get_size() - block_offset;
 			// advanced a satisfactory number of bytes
-			if((cur_pos + n_bytes) > (result + global_pos)) {
-				block_offset += (cur_pos + n_bytes) - (result + global_pos);
+			if((cur_pos + n_bytes) > (result + offset)) {
+				block_offset += (cur_pos + n_bytes) - (result + offset);
 				break;
 			} else {
 				// advance pointer
@@ -165,9 +165,9 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 			}
 		}
 	} else {
-		while(cur_pos > result + global_pos) {
+		while(cur_pos > result + offset) {
 			giga::giga_size n_bytes = block_offset + 1;
-			if((cur_pos - n_bytes) < (result + global_pos)) {
+			if((cur_pos - n_bytes) < (result + offset)) {
 				break;
 			} else {
 				cur_pos -= n_bytes;
