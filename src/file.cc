@@ -166,8 +166,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size glo
 		}
 	} else {
 		while(cur_pos > result + global_pos) {
-			// if size of block is 0, we cannot read any bytes no matter the offset
-			giga::giga_size n_bytes = (block->get_size() == 0) ? 0 : block_offset + 1;
+			giga::giga_size n_bytes = block_offset + 1;
 			if((cur_pos - n_bytes) < (result + global_pos)) {
 				break;
 			} else {
