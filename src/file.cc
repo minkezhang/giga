@@ -139,17 +139,17 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 		this->cache_entry_locks.at(i)->lock();
 	}
 
-	giga::giga_size result = info->get_global_position();
-	giga::giga_size cur_pos = result;
+	giga::giga_size head_pos = info->get_global_position();
+	giga::giga_size cur_pos = head_pos;
 	giga::giga_size block_offset = info->get_block_offset();
 
 	if(offset > 0) {
-		while(cur_pos < result + offset) {
+		while(cur_pos < head_pos + offset) {
 			// calculate the number of bytes advanced by the pointer
 			giga::giga_size n_bytes = block->get_size() - block_offset;
 			// advanced a satisfactory number of bytes
-			if((cur_pos + n_bytes) > (result + offset)) {
-				block_offset += (cur_pos + n_bytes) - (result + offset);
+			if((cur_pos + n_bytes) > (head_pos + offset)) {
+				block_offset += (cur_pos + n_bytes) - (head_pos + offset);
 				break;
 			} else {
 				// advance pointer
@@ -165,9 +165,11 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 			}
 		}
 	} else {
-		while(cur_pos > result + offset) {
+		while(cur_pos > head_pos + offset) {
 			giga::giga_size n_bytes = block_offset + 1;
-			if((cur_pos - n_bytes) < (result + offset)) {
+			// overshot -- compensate
+			if((cur_pos - n_bytes) < (head_pos + offset)) {
+				block_offset = n_bytes - cur_pos;
 				break;
 			} else {
 				cur_pos -= n_bytes;

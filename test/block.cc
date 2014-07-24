@@ -24,6 +24,8 @@ TEST_CASE("block|seek") {
 	REQUIRE(c_five->get_pos() == 1);
 	c_five->seek(10);
 	REQUIRE(c_five->get_pos() == 5);
+	c_five->seek(-4);
+	REQUIRE(c_five->get_pos() == 1);
 	c_five->seek(-10);
 	REQUIRE(c_five->get_pos() == 0);
 
