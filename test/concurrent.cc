@@ -77,7 +77,7 @@ TEST_CASE("concurrent|read") {
 
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
 
-	std::cout << "R: ";
+	std::cout << "RD: ";
 	std::cout.flush();
 
 	for(int attempt = 0; attempt < n_attempts; attempt++) {
@@ -110,13 +110,21 @@ TEST_CASE("concurrent|read") {
 	REQUIRE(*result == n_attempts * n_threads);
 }
 
+TEST_CASE("concurrent|write-insert") {
+	std::cout << "WI: ." << std::endl;
+}
+
+TEST_CASE("concurrent|write-erase") {
+	std::cout << "WE: ." << std::endl;
+}
+
 TEST_CASE("concurrent|write-overwrite") {
 	int n_threads = 16;
 	int n_attempts = 1000;
 
 	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
 
-	std::cout << "W: ";
+	std::cout << "WO: ";
 	std::cout.flush();
 
 	for(int attempt = 0; attempt < n_attempts; attempt++) {
