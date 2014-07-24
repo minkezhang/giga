@@ -10,8 +10,10 @@ giga::InvalidOperation::InvalidOperation(std::string func_name, std::string msg)
 	this->func_name = func_name;
 	this->msg = msg;
 
+	stacktrace::call_stack st;
+
 	std::stringstream buffer;
-	buffer << "InvalidOperation(" << this->func_name << "): Invalid operation on " << this->func_name << "() -- " << this->msg;
+	buffer << "InvalidOperation(" << this->func_name << "): Invalid operation on " << this->func_name << "() -- " << this->msg << std::endl << st.to_string();
 	this->buffer = buffer.str();
 }
 

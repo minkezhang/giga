@@ -2,6 +2,8 @@
 
 #include <memory>
 
+#include <iostream>
+
 #include "src/client.h"
 #include "src/config.h"
 #include "src/exception.h"
@@ -47,6 +49,17 @@ TEST_CASE("block|write-insert") {
 	c_five->seek(-10);
 	REQUIRE(c_five->read(buffer, 3) == 3);
 	REQUIRE(buffer->compare("bla") == 0);
+
+	c_five->seek(-10);
+	REQUIRE(c_five->get_pos() == 0);
+	REQUIRE(c_five_read->get_pos() == 8);
+	c_five_read->seek(-7);
+	REQUIRE(c_five_read->get_pos() == 1);
+
+	buffer->assign("new");
+	REQUIRE(c_five->write(buffer, true) == 3);
+	REQUIRE(c_five->get_pos() == 3);
+	REQUIRE(c_five_read->get_pos() == 4);
 
 	file_five->close(c_five);
 	file_five->close(c_five_read);
