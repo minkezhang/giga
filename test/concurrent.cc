@@ -13,6 +13,23 @@
 #include "src/config.h"
 #include "src/file.h"
 
+void aux_write_insert_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std::atomic<int>> result) {
+	int res = 0;
+
+	std::shared_ptr<giga::Client> c = file->open();
+	res += (file->get_n_clients() > 0);
+	std::shared_ptr<std::string> buffer (new std::string("xy"));
+
+	int rand_pos = (rand() % 3) * 2 + 1;
+	c->seek(rand_pos);
+
+	res += (c->write(buffer, true) == 2);
+	file->close(c);
+
+	int expected = 2;
+	*result += (int) (res == expected);
+}
+
 void aux_write_overwrite_test_worker(std::shared_ptr<giga::File> file, std::shared_ptr<std::atomic<int>> result) {
 	int res = 0;
 
@@ -81,7 +98,6 @@ TEST_CASE("concurrent|read") {
 	std::cout.flush();
 
 	for(int attempt = 0; attempt < n_attempts; attempt++) {
-		std::shared_ptr<std::string> buffer (new std::string);
 		std::vector<std::thread> threads;
 		std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "ro", std::shared_ptr<giga::Config> (new giga::Config(2, 2, 1))));
 
@@ -111,7 +127,49 @@ TEST_CASE("concurrent|read") {
 }
 
 TEST_CASE("concurrent|write-insert") {
-	std::cout << "WI: ." << std::endl;
+	int n_threads = 16;
+	int n_attempts = 1000;
+	std::shared_ptr<std::atomic<int>> result (new std::atomic<int>());
+
+	std::cout << "WI: ";
+	std::cout.flush();
+
+	for(int attempt = 0; attempt < n_attempts; attempt++) {
+		std::shared_ptr<std::string> buffer (new std::string);
+		std::vector<std::thread> threads;
+		std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "rw", std::shared_ptr<giga::Config> (new giga::Config(2, 2, 1))));
+
+		for(int i = 0; i < n_threads; i++) {
+			threads.push_back(std::thread (aux_write_insert_test_worker, file, result));
+		}
+
+		while(file->get_n_clients()) {
+			// cf. http://bit.ly/1pLvXct
+			std::this_thread::sleep_for(std::chrono::microseconds(1));
+		}
+
+
+		for(int i = 0; i < n_threads; i++) {
+			threads.at(i).join();
+		}
+
+		std::shared_ptr<giga::Client> c = file->open();
+		// all inserts have been processed
+		REQUIRE(c->read(buffer, 2 * 16 + 5) == 2 * 16 + 5);
+		// inserts are atomic
+		REQUIRE(buffer->find("xx") == std::string::npos);
+		REQUIRE(buffer->find("yy") == std::string::npos);
+		file->close(c);
+
+		if(((attempt + 1) % 25) == 0) {
+			std::cout << ".";
+			std::cout.flush();
+		}
+	}
+
+	std::cout << std::endl;
+
+	REQUIRE(*result == n_attempts * n_threads);
 }
 
 TEST_CASE("concurrent|write-erase") {
@@ -128,7 +186,6 @@ TEST_CASE("concurrent|write-overwrite") {
 	std::cout.flush();
 
 	for(int attempt = 0; attempt < n_attempts; attempt++) {
-		std::shared_ptr<std::string> buffer (new std::string);
 		std::vector<std::thread> threads;
 		std::shared_ptr<giga::File> file (new giga::File("test/files/five.txt", "rw", std::shared_ptr<giga::Config> (new giga::Config(2, 2, 1))));
 
