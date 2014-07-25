@@ -186,9 +186,9 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 	}
 
 	info->get_block()->unlock_data();
+	block->enqueue(client->get_id(), info);
 	info->set_block(block);
 	info->set_block_offset(block_offset);
-	block->enqueue(client->get_id(), info);
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->unlock();
@@ -226,6 +226,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 		}
 	}
 
+	// reserve the next few blocks for atomic reads and write-overwrites
 	giga::giga_size n = 0;
 	giga::giga_size offset = client->get_client_info()->get_block_offset();
 	while((block != NULL) && (n < n_bytes)) {
@@ -296,7 +297,9 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 			info->set_block_offset(info->get_block_offset() + offset);
 		// a read ended outside the starting block
 		} else if(block->get_next_safe() != NULL) {
-			info->set_block(block->get_next_safe());
+			std::shared_ptr<giga::Block> next = block->get_next_safe();
+			next->enqueue(client->get_id(), info);
+			info->set_block(next);
 			info->set_block_offset(0);
 		// set EOF
 		} else {
@@ -310,7 +313,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		block->unlock_data();
 	}
 
-	info->get_block()->enqueue(client->get_id(), info);
+	// info->get_block()->enqueue(client->get_id(), info);
 	client->unlock_client();
 
 	return(n);
@@ -377,7 +380,9 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 				info->set_block_offset(info->get_block_offset() + offset);
 			// a write ended outside the starting block
 			} else if(block->get_next_safe() != NULL) {
-				info->set_block(block->get_next_safe());
+				std::shared_ptr<giga::Block> next = block->get_next_safe();
+				next->enqueue(client->get_id(), info);
+				info->set_block(next);
 				info->set_block_offset(0);
 			// set EOF
 			} else {

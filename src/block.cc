@@ -140,7 +140,10 @@ giga::giga_size giga::Block::append(const std::shared_ptr<std::string>& buffer) 
 giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer, bool is_insert) {
 	this->is_dirty = 1;
 	this->global_offset = 0;
-	if(is_insert) {
+	if(!is_insert) {
+		this->data.replace(start, ((this->size - start) > buffer->length()) ? buffer->length() : (this->size - start), *buffer);
+	} else {
+		// no one can enqueue or dequeue at this time -- we have sole access to the client list (and by extension, the client info)
 		this->lock_queue();
 		this->data.insert(start, *buffer);
 		this->size += buffer->length();
@@ -151,8 +154,6 @@ giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<
 			}
 		}
 		this->unlock_queue();
-	} else {
-		this->data.replace(start, ((this->size - start) > buffer->length()) ? buffer->length() : (this->size - start), *buffer);
 	}
 	return(buffer->length());
 }
