@@ -381,7 +381,13 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 				info->set_block_offset(0);
 			// set EOF
 			} else {
-				info->set_block_offset(info->get_block_offset() + offset);
+				// TODO -- insert new blocks as necessary
+				if(n < n_bytes) {
+					write_buffer->assign(buffer->substr(n));
+					n += block->append(write_buffer);
+				}
+				info->set_block_offset(block->get_size());
+				// info->set_block_offset(info->get_block_offset() + offset);
 				this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 				block->unlock_data();
 				break;
@@ -391,6 +397,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 			block->unlock_data();
 		}
 	} else {
+		// TODO -- add new blocks as necessary
 		this->acquire_block(client, 0);
 		std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 		std::shared_ptr<giga::Block> block = info->get_block();

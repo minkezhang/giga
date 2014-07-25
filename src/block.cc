@@ -80,6 +80,7 @@ void giga::Block::load(std::string filename, std::string mode) {
 
 	if(this->is_dirty) {
 		if(giga::Crypto::hash(this->data).compare(this->checksum)) {
+			std::cout << this->data << std::endl;
 			throw(RuntimeError("giga::Block::load", "data was corrupted between save and load"));
 		}
 	}
@@ -126,6 +127,14 @@ giga::giga_size giga::Block::erase(giga::giga_size start, size_t len) {
 	this->data.erase(start, len);
 	this->size -= len;
 	return(len);
+}
+
+giga::giga_size giga::Block::append(const std::shared_ptr<std::string>& buffer) {
+	this->is_dirty = 1;
+	this->global_offset = 0;
+	this->data.append(*buffer);
+	this->size += buffer->length();
+	return(buffer->length());
 }
 
 giga::giga_size giga::Block::write(giga::giga_size start, const std::shared_ptr<std::string>& buffer, bool is_insert) {

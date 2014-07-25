@@ -81,6 +81,17 @@ TEST_CASE("block|write-overwrite") {
 	REQUIRE(c_five_read->read(buffer, 10) == 5);
 	REQUIRE(buffer->compare("blad\n") == 0);
 
+	buffer->assign("abcdefghijklmnopqrstuvwxyz\n");
+
+	c_five->seek(-10);
+	c_five_read->seek(-10);
+	REQUIRE(c_five->get_pos() == 0);
+	REQUIRE(c_five_read->get_pos() == 0);
+	REQUIRE(c_five->write(buffer, false) == 27);
+	REQUIRE(c_five->get_pos() == 27);
+	REQUIRE(c_five_read->read(buffer, 100) == 27);
+	REQUIRE(buffer->compare("abcdefghijklmnopqrstuvwxyz\n") == 0);
+
 	file_five->close(c_five);
 	file_five->close(c_five_read);
 	REQUIRE_THROWS_AS(c_five->write(buffer, true), giga::InvalidOperation);

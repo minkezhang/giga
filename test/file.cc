@@ -29,7 +29,6 @@ TEST_CASE("file|initialization") {
 	REQUIRE(file->get_n_clients() == 1);
 	file->close(d);
 	REQUIRE(file->get_n_clients() == 0);
-
 }
 
 TEST_CASE("file|modes") {
@@ -39,4 +38,11 @@ TEST_CASE("file|modes") {
 	write_file = std::shared_ptr<giga::File> (new giga::File("test/files/nonexistent.txt", "rw"));
 	REQUIRE(remove("test/files/nonexistent.txt") == 0);
 	REQUIRE_THROWS_AS(giga::File("test/files/nonexistent.txt", "a"), giga::InvalidOperation);
+}
+
+TEST_CASE("file|save") {
+	/*
+	std::shared_ptr<giga::File> write_file (new giga::File("test/files/nonexistent.txt", "wo"));
+	std::shared_ptr<giga::Client> c = write_file->open();
+	*/
 }
