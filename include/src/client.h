@@ -37,6 +37,7 @@ namespace giga {
 			giga_size write(const std::shared_ptr<std::string>& buffer, bool is_insert);
 			giga_size erase(size_t len);
 			bool get_is_closed();
+			void save();
 
 			/**
 			 * these functions MUST NOT be called by the user

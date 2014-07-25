@@ -38,6 +38,10 @@ void giga::Client::seek(giga::giga_size offset) {
 	this->file->seek(this->shared_from_this(), offset);
 }
 
+void giga::Client::save() {
+	this->file->save(this->shared_from_this());
+}
+
 void giga::Client::lock_client() { this->client_lock.lock(); }
 void giga::Client::unlock_client() { this->client_lock.unlock(); }
 

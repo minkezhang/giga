@@ -33,8 +33,8 @@ Current Features
 Planned Features
 ----
 * concurrency tests for `Client::write(..., is_insert = true)`
-* implement `erase(n)`
-* `save()`
+* implement `Client::erase(n)`, `Client::save()`
+* ensure blocks changed during `Client::write` invocation do not exceed `Config::max_block_size` (by adding and linking new blocks)
 * possible network integration
 * performance testing
 * change internal file representation to be more scalable

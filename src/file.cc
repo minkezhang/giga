@@ -43,7 +43,7 @@ giga::File::File(std::string filename, std::string mode, const std::shared_ptr<g
 	struct stat stat_buf;
 
 	int result = stat(filename.c_str(), &stat_buf);
-	this->max_page_size = config->get_max_page_size();
+	this->max_block_size = config->get_max_block_size();
 	size_t page_size = config->get_page_size();
 
 	giga_size s = (result == 0) ? stat_buf.st_size : -1;
@@ -451,8 +451,27 @@ void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 	this->n_clients--;
 }
 
-void giga::File::save() {
+void giga::File::save(const std::shared_ptr<giga::Client>& client) {
 	throw(giga::NotImplemented("giga::File::save"));
+	client->lock_client();
+	if(client->get_is_closed()) {
+		client->unlock_client();
+		throw(giga::InvalidOperation("giga::File::save", "attempting to save from a closed client"));
+	}
+	this->cache_lock.lock();
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->lock();
+	}
+
+	for(std::shared_ptr<giga::Block> block = this->head_block; block != NULL; block = block->get_next_unsafe()) {
+		
+	}
+
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->unlock();
+	}
+	this->cache_lock.unlock();
+	client->unlock_client();
 }
 
 /**

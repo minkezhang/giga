@@ -31,7 +31,6 @@ namespace giga {
 			std::shared_ptr<Client> open();
 			void close(const std::shared_ptr<Client>& client);
 			int get_n_clients();
-			void save();
 
 			/**
 			 * these functions MUST NOT be called by the user, and are called internally by the client wrapper functions,
@@ -44,6 +43,7 @@ namespace giga {
 			giga_size read(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
 			giga_size write(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, bool is_insert);
 			giga_size erase(const std::shared_ptr<Client>& client, size_t len);
+			void save(const std::shared_ptr<Client>& client);
 
 		private:
 			std::atomic<int> n_clients;
@@ -51,7 +51,7 @@ namespace giga {
 			// unique ID tracker
 			std::atomic<int> n_opens;
 
-			size_t max_page_size;
+			size_t max_block_size;
 
 			std::string filename;
 			std::string mode;
