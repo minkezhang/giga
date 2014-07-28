@@ -94,7 +94,6 @@ TEST_CASE("block|write-overwrite") {
 
 	file_five->close(c_five);
 	file_five->close(c_five_read);
-	REQUIRE_THROWS_AS(c_five->write(buffer, true), giga::InvalidOperation);
 }
 
 TEST_CASE("block|read") {

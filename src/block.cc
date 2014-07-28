@@ -80,7 +80,6 @@ void giga::Block::load(std::string filename, std::string mode) {
 
 	if(this->is_dirty) {
 		if(giga::Crypto::hash(this->data).compare(this->checksum)) {
-			std::cout << this->data << std::endl;
 			throw(RuntimeError("giga::Block::load", "data was corrupted between save and load"));
 		}
 	}

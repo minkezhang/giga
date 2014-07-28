@@ -32,7 +32,7 @@ namespace giga {
 			void set_block_offset(giga_size n_bytes);
 
 		private:
-			giga_size block_offset;
+			std::atomic<giga_size> block_offset;
 
 			std::atomic<bool> block_lock;
 			std::shared_ptr<Block> block;

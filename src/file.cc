@@ -266,6 +266,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	this->acquire_block(client, n_bytes);
 
+	std::shared_ptr<giga::Block> head_block = info->get_block();
 	while(n < n_bytes) {
 		// backup copy of the block being referenced in the cache
 		std::shared_ptr<giga::Block> block = info->get_block();
@@ -298,11 +299,10 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		// a read ended outside the starting block
 		} else if(block->get_next_safe() != NULL) {
 			std::shared_ptr<giga::Block> next = block->get_next_safe();
-			try {
-				next->enqueue(client->get_id(), info);
-			} catch(giga::RuntimeError& e) {
-				throw(giga::RuntimeError("giga::File::read", "enqueue error detected while attempting to set block"));
+			if(block != head_block) {
+				block->dequeue(client->get_id(), info);
 			}
+			next->enqueue(client->get_id(), info);
 			info->set_block(next);
 			info->set_block_offset(0);
 		// set EOF
@@ -352,6 +352,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 
 		this->acquire_block(client, n_bytes);
 
+		std::shared_ptr<giga::Block> head_block = info->get_block();
 		while(n < n_bytes) {
 			// backup copy of the block being referenced in the cache
 			std::shared_ptr<giga::Block> block = info->get_block();
@@ -385,6 +386,9 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 			// a write ended outside the starting block
 			} else if(block->get_next_safe() != NULL) {
 				std::shared_ptr<giga::Block> next = block->get_next_safe();
+				if(block != head_block) {
+					block->dequeue(client->get_id(), info);
+				}
 				next->enqueue(client->get_id(), info);
 				info->set_block(next);
 				info->set_block_offset(0);
@@ -419,6 +423,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 			// side effect of blocking the block cache line here
 			this->allocate(block);
 		}
+		this->cache.at(block->get_id())->increment();
 		n = block->write(info->get_block_offset(), buffer, is_insert);
 		info->set_block_offset(info->get_block_offset() + n);
 		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();

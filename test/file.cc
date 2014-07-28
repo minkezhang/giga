@@ -6,7 +6,6 @@
 #include "src/config.h"
 #include "src/exception.h"
 #include "src/file.h"
-
 TEST_CASE("config|validation") {
 	REQUIRE_THROWS_AS(giga::Config(0, 2, 1), giga::InvalidOperation);
 	REQUIRE_THROWS_AS(giga::Config(1, 2, 0), giga::InvalidOperation);
