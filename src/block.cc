@@ -25,6 +25,18 @@ giga::Block::Block(giga::giga_size global_offset, size_t size, const std::shared
 	this->checksum = "";
 }
 
+bool giga::Block::at(int client_id) {
+	this->lock_queue();
+	bool found = false;
+	try {
+		this->queue.at(client_id);
+		found = true;
+	} catch(const std::out_of_range& e) {
+	}
+	this->unlock_queue();
+	return(found);
+}
+
 /**
  * a client is requesting a read-write on the block
  */
@@ -34,7 +46,7 @@ void giga::Block::enqueue(int client_id, const std::shared_ptr<giga::ClientInfo>
 		this->queue.at(client_id);
 		this->unlock_queue();
 		throw(giga::RuntimeError("giga::Block::enqueue", "double enqueue detected"));
-	} catch (const std::out_of_range& e) {
+	} catch(const std::out_of_range& e) {
 		this->queue.insert(std::pair<int, std::shared_ptr<giga::ClientInfo>> (client_id, client_info));
 	}
 	this->unlock_queue();

@@ -206,20 +206,18 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 	std::shared_ptr<Block> block;
 	while(!success) {
 		block = client->get_client_info()->get_block();
-		try {
-			/**
-			 * see if the block reference has changed for this client during the time taken to acquire
-			 *	the block cache line lock
-			 *
-			 * on call to Block::insert, the given block will DELETE from its queue all clients
-			 *	whose block reference has changed, and will call ClientInfo::set_block to set the new block reference;
-			 *	this tests for that and tries again
-			 */
-			block->lock_data();
-			block->dequeue(client->get_id(), client->get_client_info());
-			block->enqueue(client->get_id(), client->get_client_info());
-			success = true;
-		} catch(const giga::RuntimeError& e) {
+		block->lock_data();
+		/**
+		 * see if the block reference has changed for this client during the time taken to acquire
+		 *	the block cache line lock
+		 *
+		 * on call to Block::insert, the given block will DELETE from its queue all clients
+		 *	whose block reference has changed, and will call ClientInfo::set_block to set the new block reference;
+		 *	this tests for that and tries again
+		 */
+		success = block->at(client->get_id());
+		if(!success) {
+			throw(giga::RuntimeError("giga::File::acquire_block", "missing queue entry"));
 			block->unlock_data();
 			// put in client request
 			block->enqueue(client->get_id(), client->get_client_info());
@@ -463,7 +461,6 @@ void giga::File::save(const std::shared_ptr<giga::Client>& client) {
 	}
 
 	for(std::shared_ptr<giga::Block> block = this->head_block; block != NULL; block = block->get_next_unsafe()) {
-		
 	}
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {

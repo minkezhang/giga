@@ -52,6 +52,7 @@ namespace giga {
 
 			void enqueue(int client_id, const std::shared_ptr<ClientInfo>& client_info);
 			void dequeue(int client_id, const std::shared_ptr<ClientInfo>& client_info);
+			bool at(int client_id);
 
 		private:
 			giga_size id;
