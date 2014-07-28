@@ -19,16 +19,16 @@ namespace giga {
 	/**
 	 * wrapper around client and associated housekeeping info
 	 */
-	class ClientInfo {
+	class ClientInfo : public std::enable_shared_from_this<ClientInfo> {
 		public:
-			ClientInfo(const std::shared_ptr<Block>& block);
+			ClientInfo();
 
 			std::shared_ptr<Block> get_block();
 
 			giga_size get_block_offset();
 			giga_size get_global_position();
 
-			void set_block(const std::shared_ptr<Block>& block);
+			void set_block(int client_id, const std::shared_ptr<Block>& block);
 			void set_block_offset(giga_size n_bytes);
 
 		private:

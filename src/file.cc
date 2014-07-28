@@ -186,8 +186,7 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 	}
 
 	info->get_block()->unlock_data();
-	block->enqueue(client->get_id(), info);
-	info->set_block(block);
+	info->set_block(client->get_id(), block);
 	info->set_block_offset(block_offset);
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
@@ -218,6 +217,7 @@ void giga::File::acquire_block(const std::shared_ptr<Client>& client, giga::giga
 			 */
 			block->lock_data();
 			block->dequeue(client->get_id(), client->get_client_info());
+			block->enqueue(client->get_id(), client->get_client_info());
 			success = true;
 		} catch(const giga::RuntimeError& e) {
 			block->unlock_data();
@@ -266,7 +266,6 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 
 	this->acquire_block(client, n_bytes);
 
-	std::shared_ptr<giga::Block> head_block = info->get_block();
 	while(n < n_bytes) {
 		// backup copy of the block being referenced in the cache
 		std::shared_ptr<giga::Block> block = info->get_block();
@@ -299,11 +298,7 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		// a read ended outside the starting block
 		} else if(block->get_next_safe() != NULL) {
 			std::shared_ptr<giga::Block> next = block->get_next_safe();
-			if(block != head_block) {
-				block->dequeue(client->get_id(), info);
-			}
-			next->enqueue(client->get_id(), info);
-			info->set_block(next);
+			info->set_block(client->get_id(), next);
 			info->set_block_offset(0);
 		// set EOF
 		} else {
@@ -317,7 +312,6 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		block->unlock_data();
 	}
 
-	// info->get_block()->enqueue(client->get_id(), info);
 	client->unlock_client();
 
 	return(n);
@@ -351,8 +345,6 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 		giga::giga_size n_bytes = buffer->length();
 
 		this->acquire_block(client, n_bytes);
-
-		std::shared_ptr<giga::Block> head_block = info->get_block();
 		while(n < n_bytes) {
 			// backup copy of the block being referenced in the cache
 			std::shared_ptr<giga::Block> block = info->get_block();
@@ -386,11 +378,7 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 			// a write ended outside the starting block
 			} else if(block->get_next_safe() != NULL) {
 				std::shared_ptr<giga::Block> next = block->get_next_safe();
-				if(block != head_block) {
-					block->dequeue(client->get_id(), info);
-				}
-				next->enqueue(client->get_id(), info);
-				info->set_block(next);
+				info->set_block(client->get_id(), next);
 				info->set_block_offset(0);
 			// set EOF
 			} else {
@@ -435,12 +423,9 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 }
 
 std::shared_ptr<giga::Client> giga::File::open() {
-	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo(this->head_block));
+	std::shared_ptr<giga::ClientInfo> c_info (new giga::ClientInfo());
 	std::shared_ptr<giga::Client> c (new giga::Client(this->shared_from_this(), c_info, NULL, this->n_opens.fetch_add(1)));
-	// set block reference on the block side
-	if(this->head_block != NULL) {
-		this->head_block->enqueue(c->get_id(), c->get_client_info());
-	}
+	c_info->set_block(c->get_id(), this->head_block);
 	if(this->head_client == NULL) {
 		// this is clumsy -- fix it
 		this->client_list_lock.lock();

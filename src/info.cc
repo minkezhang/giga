@@ -6,8 +6,7 @@
 
 #include "src/info.h"
 
-giga::ClientInfo::ClientInfo(const std::shared_ptr<giga::Block>& block) {
-	this->block = block;
+giga::ClientInfo::ClientInfo() {
 	this->block_lock = false;
 	this->block_offset = 0;
 }
@@ -38,9 +37,15 @@ giga::giga_size giga::ClientInfo::get_global_position() {
 	return(global_pos + this->block_offset);
 }
 
-void giga::ClientInfo::set_block(const std::shared_ptr<giga::Block>& block) {
+void giga::ClientInfo::set_block(int client_id, const std::shared_ptr<giga::Block>& block) {
 	this->lock_block();
+	if(this->block != NULL) {
+		this->block->dequeue(client_id, this->shared_from_this());
+	}
 	this->block = block;
+	if(this->block != NULL) {
+		this->block->enqueue(client_id, this->shared_from_this());
+	}
 	this->unlock_block();
 }
 
