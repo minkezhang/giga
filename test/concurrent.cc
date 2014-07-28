@@ -17,16 +17,17 @@ void aux_write_insert_test_worker(std::shared_ptr<giga::File> file, std::shared_
 	int res = 0;
 
 	std::shared_ptr<giga::Client> c = file->open();
-	res += (file->get_n_clients() > 0);
 	std::shared_ptr<std::string> buffer (new std::string("xy"));
 
 	int rand_pos = (rand() % 3) * 2 + 1;
 	c->seek(rand_pos);
 
+	res += (c->get_pos() % 2 == 1);
 	res += (c->write(buffer, true) == 2);
+	res += (c->get_pos() % 2 == 1);
 	file->close(c);
 
-	int expected = 2;
+	int expected = 3;
 	*result += (int) (res == expected);
 }
 
@@ -157,6 +158,7 @@ TEST_CASE("concurrent|write-insert") {
 		// all inserts have been processed
 		REQUIRE(c->read(buffer, 2 * 16 + 5) == 2 * 16 + 5);
 		// inserts are atomic
+		std::cout << "buffer -- '" << *buffer << "'" << std::endl;
 		REQUIRE(buffer->find("xx") == std::string::npos);
 		REQUIRE(buffer->find("yy") == std::string::npos);
 		file->close(c);
