@@ -298,7 +298,11 @@ giga::giga_size giga::File::read(const std::shared_ptr<giga::Client>& client, co
 		// a read ended outside the starting block
 		} else if(block->get_next_safe() != NULL) {
 			std::shared_ptr<giga::Block> next = block->get_next_safe();
-			next->enqueue(client->get_id(), info);
+			try {
+				next->enqueue(client->get_id(), info);
+			} catch(giga::RuntimeError& e) {
+				throw(giga::RuntimeError("giga::File::read", "enqueue error detected while attempting to set block"));
+			}
 			info->set_block(next);
 			info->set_block_offset(0);
 		// set EOF

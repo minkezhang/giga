@@ -32,4 +32,4 @@ test: clean $(EXECUTABLE)
 	ulimit -c unlimited && ./$(EXECUTABLE) | tee results.log
 
 clean:
-	rm -f $(EXECUTABLE) *.o *.log
+	rm -f $(EXECUTABLE) *.o *.log core
