@@ -117,7 +117,6 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  * this implements a RELATIVE seek
  */
 void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size offset) {
-	// cannot make changes to the document while calculating global position
 	client->lock_client();
 
 	if(client->get_is_closed()) {
@@ -131,63 +130,69 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 	}
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
-	this->acquire_block(client, 0);
-	std::shared_ptr<giga::Block> block = info->get_block();
 
+	// cannot make changes to the document while calculating global position
 	this->cache_lock.lock();
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->lock();
 	}
 
-	giga::giga_size head_pos = info->get_global_position();
-	giga::giga_size cur_pos = head_pos;
-	giga::giga_size block_offset = info->get_block_offset();
+	giga::giga_size cur_pos = 0;
+	giga::giga_size end_pos = info->get_global_position() + offset;
 
-	if(offset > 0) {
-		while(cur_pos < head_pos + offset) {
-			// calculate the number of bytes advanced by the pointer
-			giga::giga_size n_bytes = block->get_size() - block_offset;
-			// advanced a satisfactory number of bytes
-			if((cur_pos + n_bytes) > (head_pos + offset)) {
-				block_offset += (cur_pos + n_bytes) - (head_pos + offset);
-				break;
-			} else {
-				// advance pointer
-				cur_pos += n_bytes;
-				block_offset = 0;
-				if(block->get_next_safe() != NULL) {
-					block = block->get_next_safe();
-				} else {
-					// EOF
-					block_offset = block->get_size();
-					break;
-				}
-			}
+	info->set_block(client->get_id(), this->head_block);
+	info->set_block_offset(0);
+
+	if(end_pos < 0) {
+		for(size_t i = 0; i < this->n_cache_entries; i++) {
+			this->cache_entry_locks.at(i)->unlock();
 		}
-	} else {
-		while(cur_pos > head_pos + offset) {
-			giga::giga_size n_bytes = block_offset + 1;
-			// overshot -- compensate
-			if((cur_pos - n_bytes) < (head_pos + offset)) {
-				block_offset = n_bytes - cur_pos;
-				break;
-			} else {
-				cur_pos -= n_bytes;
-				if(block->get_prev_safe() != NULL) {
-					block = block->get_prev_safe();
-					block_offset = block->get_size() - 1;
-				} else {
-					// beginning of the file
-					block_offset = 0;
-					break;
-				}
-			}
-		}
+		this->cache_lock.unlock();
+		client->unlock_client();
+		return;
 	}
 
-	info->get_block()->unlock_data();
-	info->set_block(client->get_id(), block);
-	info->set_block_offset(block_offset);
+	this->acquire_block(client, end_pos);
+	std::shared_ptr<giga::Block> block;
+	while(cur_pos < end_pos) {
+		// backup copy of the block being referenced in the cache
+		block = info->get_block();
+
+		// EOF check
+		if(info->get_block_offset() == block->get_size()) {
+			block->unlock_data();
+			std::cout << "  giga::File::seek() -- released block " << block->get_id() << " by client " << client->get_id() << std::endl;
+			break;
+		}
+
+		giga::giga_size n = (end_pos - cur_pos) > block->get_size() ? block->get_size() : (end_pos - cur_pos);
+		cur_pos += n;
+
+		// a read ended within the same block
+		if(info->get_block_offset() + n < block->get_size()) {
+			info->set_block_offset(info->get_block_offset() + n);
+		// a read ended outside the starting block
+		} else if(block->get_next_safe() != NULL) {
+			std::shared_ptr<giga::Block> next = block->get_next_safe();
+			info->set_block(client->get_id(), next);
+			info->set_block_offset(0);
+		// set EOF
+		} else {
+			info->set_block_offset(info->get_block_offset() + n);
+			block->unlock_data();
+			std::cout << "  giga::File::seek() -- released block " << block->get_id() << " by client " << client->get_id() << std::endl;
+			break;
+		}
+		block->unlock_data();
+		std::cout << "  giga::File::seek() -- released block " << block->get_id() << " by client " << client->get_id() << std::endl;
+	}
+
+	if(block->get_next_safe() != NULL) {
+		try {
+			block->get_next_safe()->unlock_data();
+		} catch(const giga::RuntimeError& e) {
+		}
+	}
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->unlock();
@@ -407,11 +412,13 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 		} catch(const std::out_of_range& e) {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 			// side effect of blocking the block cache line here
-			this->allocate(block);
+			this->allocate(block); // minke
 		}
 		this->cache.at(block->get_id())->increment();
 		n = block->write(info->get_block_offset(), buffer, is_insert);
+
 		info->set_block_offset(info->get_block_offset() + n);
+
 		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 		block->unlock_data();
 	}
