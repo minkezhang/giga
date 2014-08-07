@@ -116,7 +116,7 @@ giga::giga_size giga::File::get_client_pos(const std::shared_ptr<giga::Client>& 
  *
  * this implements a RELATIVE seek
  */
-void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size offset) {
+void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size offset, bool debug) {
 	client->lock_client();
 
 	if(client->get_is_closed()) {
@@ -131,28 +131,30 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
-	// cannot make changes to the document while calculating global position
-	this->cache_lock.lock();
-	for(size_t i = 0; i < this->n_cache_entries; i++) {
-		this->cache_entry_locks.at(i)->lock();
-	}
-
 	giga::giga_size cur_pos = 0;
 	giga::giga_size end_pos = info->get_global_position() + offset;
 
-	info->set_block(client->get_id(), this->head_block);
-	info->set_block_offset(0);
-
 	if(end_pos < 0) {
-		for(size_t i = 0; i < this->n_cache_entries; i++) {
-			this->cache_entry_locks.at(i)->unlock();
-		}
-		this->cache_lock.unlock();
 		client->unlock_client();
 		return;
 	}
 
 	this->acquire_block(client, end_pos);
+	// cannot make changes to the document while calculating global position
+	this->cache_lock.lock();
+	if(debug) {
+		std::cout << "  (" << client->get_id() << ") giga::File::seek(): acquired cache" << std::endl;
+	}
+	for(size_t i = 0; i < this->n_cache_entries; i++) {
+		this->cache_entry_locks.at(i)->lock();
+		if(debug) {
+			std::cout << "  (" << client->get_id() << ") giga::File::seek(): acquired cache line -- " << i << std::endl;
+		}
+	}
+
+	info->set_block(client->get_id(), this->head_block);
+	info->set_block_offset(0);
+
 	std::shared_ptr<giga::Block> block;
 	while(cur_pos < end_pos) {
 		// backup copy of the block being referenced in the cache
@@ -161,7 +163,6 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 		// EOF check
 		if(info->get_block_offset() == block->get_size()) {
 			block->unlock_data();
-			std::cout << "  giga::File::seek() -- released block " << block->get_id() << " by client " << client->get_id() << std::endl;
 			break;
 		}
 
@@ -180,24 +181,21 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 		} else {
 			info->set_block_offset(info->get_block_offset() + n);
 			block->unlock_data();
-			std::cout << "  giga::File::seek() -- released block " << block->get_id() << " by client " << client->get_id() << std::endl;
 			break;
 		}
 		block->unlock_data();
-		std::cout << "  giga::File::seek() -- released block " << block->get_id() << " by client " << client->get_id() << std::endl;
-	}
-
-	if(block->get_next_safe() != NULL) {
-		try {
-			block->get_next_safe()->unlock_data();
-		} catch(const giga::RuntimeError& e) {
-		}
 	}
 
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
 		this->cache_entry_locks.at(i)->unlock();
+		if(debug) {
+			std::cout << "  (" << client->get_id() << ") giga::File::seek(): released cache line -- " << i << std::endl;
+		}
 	}
 	this->cache_lock.unlock();
+	if(debug) {
+		std::cout << "  (" << client->get_id() << ") giga::File::seek(): released cache" << std::endl;
+	}
 	client->unlock_client();
 	return;
 }
@@ -405,21 +403,27 @@ giga::giga_size giga::File::write(const std::shared_ptr<giga::Client>& client, c
 		this->acquire_block(client, 0);
 		std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 		std::shared_ptr<giga::Block> block = info->get_block();
+		// std::cout << "  (" << client->get_id() << ") giga::File::write(insert == true): acquired block " << block->get_id() << std::endl;
 		// lock the approprate cache block -- allocate the block if the block is not in cache
 		try {
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->lock();
+		//	std::cout << "  (" << client->get_id() << ") giga::File::write(insert == true): acquired cache line lock -- " << block->get_id() % this->n_cache_entries << std::endl;
 			this->cache.at(block->get_id());
 		} catch(const std::out_of_range& e) {
+		//	std::cout << "  (" << client->get_id() << ") giga::File::write(insert == true): released cache line lock -- calling File::allocate" << std::endl;
 			this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
 			// side effect of blocking the block cache line here
-			this->allocate(block); // minke
+			this->allocate(block, false);
 		}
+		// std::cout << "  (" << client->get_id() << ") giga::File::write(insert == true): inserting into block -- " << block->get_id() << std::endl;
 		this->cache.at(block->get_id())->increment();
 		n = block->write(info->get_block_offset(), buffer, is_insert);
 
 		info->set_block_offset(info->get_block_offset() + n);
 
+		// std::cout << "  (" << client->get_id() << ") giga::File::write(insert == true): released cache line lock -- " << block->get_id() % this->n_cache_entries << std::endl;
 		this->cache_entry_locks.at(block->get_id() % this->n_cache_entries)->unlock();
+		// std::cout << "  (" << client->get_id() << ") giga::File::write(insert == true): released block " << block->get_id() << std::endl;
 		block->unlock_data();
 	}
 
@@ -497,12 +501,20 @@ void giga::File::unpause() {
  *
  * caller must manually unlock the cache line
  */
-void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
+void giga::File::allocate(const std::shared_ptr<giga::Block>& block, bool debug) {
+	if(debug) {
+		std::cout << "    giga::File::allocate(): acquiring cache" << std::endl;
+	}
 	this->cache_lock.lock();
-
+	if(debug) {
+		std::cout << "    giga::File::allocate(): acquired cache" << std::endl;
+	}
 	// lock before making any changes -- this way, prevent access by read() and write() until lock is released
 	size_t block_cache_pos = block->get_id() % this->n_cache_entries;
 	this->cache_entry_locks.at(block_cache_pos)->lock();
+	if(debug) {
+		std::cout << "    giga::File::allocate(): acquired cache line -- " << block_cache_pos << std::endl;
+	}
 
 	/**
 	 * possible that another client has requested to load the same block --
@@ -545,6 +557,9 @@ void giga::File::allocate(const std::shared_ptr<giga::Block>& block) {
 		this->cache.insert(std::pair<int, std::shared_ptr<giga::BlockInfo>> (block->get_id(), std::shared_ptr<giga::BlockInfo> (new giga::BlockInfo(block))));
 	}
 
+	if(debug) {
+		std::cout << "    giga::File::allocate(): released cache" << std::endl;
+	}
 	this->cache_lock.unlock();
 }
 
