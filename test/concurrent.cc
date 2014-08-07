@@ -158,7 +158,6 @@ TEST_CASE("concurrent|write-insert") {
 		// all inserts have been processed
 		REQUIRE(c->read(buffer, 2 * 16 + 5) == 2 * 16 + 5);
 		// inserts are atomic
-		// std::cout << "buffer -- '" << *buffer << "'" << std::endl;
 		REQUIRE(buffer->find("xx") == std::string::npos);
 		REQUIRE(buffer->find("yy") == std::string::npos);
 		file->close(c);

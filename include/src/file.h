@@ -39,7 +39,7 @@ namespace giga {
 			~File();
 			std::shared_ptr<Client> get_client_list();
 			giga_size get_client_pos(const std::shared_ptr<Client>& client);
-			void seek(const std::shared_ptr<Client>& client, giga_size offset, bool debug = false);
+			void seek(const std::shared_ptr<Client>& client, giga_size offset);
 			giga_size read(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, giga_size n_bytes);
 			giga_size write(const std::shared_ptr<Client>& client, const std::shared_ptr<std::string>& buffer, bool is_insert);
 			giga_size erase(const std::shared_ptr<Client>& client, size_t len);
@@ -66,7 +66,7 @@ namespace giga {
 			void pause();
 			void unpause();
 
-			void allocate(const std::shared_ptr<Block>& block, bool debug = false);
+			void allocate(const std::shared_ptr<Block>& block);
 
 			// list of blocks whose data is loaded
 			std::map<giga_size, std::shared_ptr<BlockInfo>> cache;
