@@ -132,14 +132,102 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 	std::shared_ptr<giga::ClientInfo> info = client->get_client_info();
 
 	giga::giga_size cur_pos = 0;
-	giga::giga_size end_pos = info->get_global_position() + offset;
+	std::shared_ptr<giga::Block> block = this->head;
+	std::shared_ptr<giga::Block> target = info->get_block();
 
-	if(end_pos < 0) {
-		client->unlock_client();
-		return;
+	bool success = false;
+	while(!success) {
+		block->lock_data();
+		cur_pos += block->get_size();
+		// going to segfault
+		if((block->get_next_safe() == NULL) && !success) {
+			for(std::shared_ptr<giga::Block> b = this->head; b != block; b = this->block->get_next_safe()) {
+				b->unlock_data();
+			}
+			block->unlock_data();
+			client->unlock_client();
+			throw(giga::RuntimeError("giga::File::seek", "cannot find client block"));
+		} else {
+			success = (block == target);
+			// end with acquiring target and setting block = target
+			if(!success) {
+				block = block->get_next_safe();
+			}
+		}
+	}
+	// chase down client block in case Block::insert wrecks havoc
+	// Block::insert will only set info->get_block() forwards
+	success = false;
+	while(!success) {
+		// already acquired this block
+		if(block != target) {
+			block->lock_data();
+		}
+		success = block->at(client->get_id());
+		if(!success) {
+			if(block->get_next_safe() == NULL) {
+				for(std::shared_ptr<giga::Block> b = this->head; b != block; b = this->block->get_next_safe()) {
+					b->unlock_data();
+				}
+				block->unlock_data();
+				client->unlock_client();
+				throw(giga::RuntimeError("giga::File::seek", "cannot find client block"));
+			}
+			cur_pos += block->get_size();
+			block = block->get_next_safe();
+		}
 	}
 
-	this->acquire_block(client, end_pos);
+	// block now is pointing to info->get_block()
+
+	// point to actual client position
+	cur_pos -= block->get_size() + info->get_block_offset();
+
+	giga::giga_size end_pos = cur_pos + offset;
+
+	success = 0;
+
+	if(offset > 0) {
+		// 
+	} else {
+		while(!success) {
+			if(cur_pos > end_pos) {
+				cur_pos -= block->get_size()
+			}
+		}
+	}
+
+
+	giga::giga_size end_offset = 0;
+
+	if(offset > 0) {
+		while(cur_pos < end_pos) {
+			if(block->get_next_safe() == NULL) {
+				// EOF
+				if(cur_pos < end_pos) {
+					for(std::shared_ptr<giga::Block> b = this->head; b != block; b = this->block->get_next_safe()) {
+						b->unlock_data();
+					}
+					end_offset = block->get_size();
+					break;
+				}
+			}
+			block->lock_data();
+			cur_pos += block->get_size();
+		}
+	} else {
+		while(cur_pos > end_pos && block != NULL) {
+			cur_pos -= block->get_size();
+			block->unlock_data();
+		}
+	}
+	client->get_info()->get_block()->dequeue(client->get_id(), client->get_info());
+	client->get_info()->set_block(block);
+	clinet->get_info()->set_block_offset(offset);
+	block->enqueue(client->get_id, client->get_info());
+	block->unlock_data();
+
+
 	// cannot make changes to the document while calculating global position
 	this->cache_lock.lock();
 	for(size_t i = 0; i < this->n_cache_entries; i++) {
@@ -148,6 +236,19 @@ void giga::File::seek(const std::shared_ptr<giga::Client>& client, giga_size off
 
 	info->set_block(client->get_id(), this->head_block);
 	info->set_block_offset(0);
+
+	giga::giga_size cur_pos = 0;
+	giga::giga_size end_pos = info->get_global_position() + offset;
+
+	if(end_pos < 0) {
+		// TODO release all blocks too
+		for(size_t i = 0; i < this->n_cache_entries; i++) {
+			this->cache_entry_locks.at(i)->unlock();
+		}
+		this->cache_lock.unlock();
+		client->unlock_client();
+		return;
+	}
 
 	std::shared_ptr<giga::Block> block;
 	while(cur_pos < end_pos) {
