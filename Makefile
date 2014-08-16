@@ -14,11 +14,13 @@ INCLUDE_LIBS=-Iexternal/catch/include/ -Iexternal/cachepp/include/ -Iexternal/ex
 LIBS=-pthread
 
 # remember to add all sources from subdirectories as well here
-SOURCES=src/*cc libs/*/*cc
+SOURCES=src/*cc tests/*cc libs/*/*cc
 
 OBJECTS=$(SOURCES:.cc=.o)
 
 EXECUTABLE=giga.app
+
+.PHONY: all test clean
 
 all: $(SOURCES) $(EXECUTABLE)
 
