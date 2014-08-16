@@ -1,1 +1,0 @@
-../../external/stacktrace/stacktrace/call_stack_gcc.cpp
