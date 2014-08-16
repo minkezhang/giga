@@ -1,0 +1,3 @@
+[submodule "external/cachepp"]
+	path = external/cachepp
+	url = https://github.com/cripplet/cachepp.git
