@@ -7,11 +7,9 @@
 #include "libs/cachepp/lineinterface.h"
 
 namespace giga {
-	class Page : cachepp::LineInterface<std::string> {
+	class Page : public cachepp::LineInterface<std::string> {
 		public:
 			Page(cachepp::identifier id, std::string filename, size_t file_offset, bool is_dirty = false);
-
-			cachepp::identifier get_identifier();
 
 		private:
 			cachepp::identifier id;
