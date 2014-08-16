@@ -8,7 +8,7 @@ CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic -fstack
 INCLUDE=-Iinclude/
 
 # include statements necessary to link all the individual libraries
-INCLUDE_LIBS=-Iexternal/catch/include/ -Iexternal/cachepp/include/ -Iexternal/exceptionpp/include/ -Iinclude/libs/stacktrace/
+INCLUDE_LIBS=-Iexternal/catch/include/ -Iexternal/exceptionpp/include/ -Iinclude/libs/stacktrace/ -Iexternal/cachepp/include/
 
 # std::thread relies on the pthread lib
 LIBS=-pthread
