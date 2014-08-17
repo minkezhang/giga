@@ -1,22 +1,71 @@
+#include <sstream>
 #include <string>
+#include <vector>
 
 #include "libs/cachepp/globals.h"
 #include "libs/md5/md5.h"
 
 #include "src/page.h"
 
-giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offset, bool is_dirty) : cachepp::LineInterface<std::string>::LineInterface(id), filename(filename), file_offset(file_offset) {
+giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offset, size_t size, bool is_dirty) : cachepp::LineInterface<std::string>::LineInterface(id), filename(filename), file_offset(file_offset), size(size) {
 	this->is_dirty = is_dirty;
 }
 
+void giga::Page::set_size(size_t size) { this->size = size; }
+
 void giga::Page::set_filename(std::string filename) { this->filename = filename; }
+
+std::string giga::Page::get_filename() {
+	if(this->is_dirty) {
+		std::ostringstream path;
+		std::ostringstream buf;
+		buf << filename << "_" << this->id;
+		path << "/tmp/" << md5(buf.str());
+		return(path.str());
+	} else {
+		return(this->filename);
+	}
+}
 
 void giga::Page::set_file_offset(size_t file_offset) { this->file_offset = file_offset; }
 
 void giga::Page::aux_load() {
+	this->data.clear();
+
+	// load data into the page
+	FILE *fp = fopen(this->get_filename().c_str(), "r");
+	if(fseek(fp, this->file_offset, SEEK_SET) == -1) {
+		throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fseek"));
+	}
+
+	// data buffer is NOT null-terminated -- note that we could have made it so, by setting size to this->size + 1
+	// because data buffer is not null-terminated, we must manually pass in the size of the buffer to this->data.assign()
+	char *data = (char *) calloc(this->size, sizeof(char));
+
+	if(fread((void *) data, sizeof(char), this->size, fp) < this->size) {
+		throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
+	}
+	fclose(fp);
+
+	this->data.insert(this->data.end(), data, data + this->size);
+
+	free((void *) data);
 }
 
 void giga::Page::aux_unload() {
+	this->size = this->data.size();
+
+	FILE *fp = fopen(this->get_filename().c_str(), "w");
+	fputs(std::string(this->data.begin(), this->data.end()).c_str(), fp);
+	fclose(fp);
+
+	this->data.clear();
+	this->data.resize(0);
+
+	// we are now reading a "clean" file again next time
+	this->set_file_offset(0);
+	this->set_filename(this->get_filename());
+	this->set_is_dirty(false);
 }
 
 std::string giga::Page::hash() {
