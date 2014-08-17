@@ -21,4 +21,6 @@ TEST_CASE("giga|page") {
 	p.unload();
 	p.load();
 	REQUIRE(p.get_is_dirty() == false);
+	REQUIRE(p.get_data() == (std::vector<uint8_t> { 'i', 'i', '\n', '\n' }));
+	p.unload();
 }
