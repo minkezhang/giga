@@ -2,6 +2,7 @@
 #define _GIGA_CLIENT_H
 
 #include <memory>
+#include <mutex>
 
 #include "libs/cachepp/globals.h"
 
@@ -23,6 +24,7 @@ namespace giga {
 			cachepp::identifier id;
 			std::shared_ptr<File> file;
 			bool is_closed;
+			std::shared_ptr<std::recursive_mutex> l;
 
 			void set_is_closed(bool is_closed);
 	};
