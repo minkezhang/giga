@@ -17,9 +17,20 @@ namespace giga {
 	class Client;
 	class ClientData;
 
+	class Config {
+		public:
+			Config(size_t i_page_size, size_t m_page_size);
+			size_t get_i_page_size();
+			size_t get_m_page_size();
+
+		private:
+			size_t i_page_size;
+			size_t m_page_size;
+	};
+
 	class File {
 		public:
-			File(std::string filename, std::string mode);
+			File(std::string filename, std::string mode, Config config = Config(1024, 1024));
 
 			/**
 			 * returns the string read from the file
@@ -55,9 +66,13 @@ namespace giga {
 			std::string filename;
 			std::string mode;
 
+			size_t size;
+
 			// increment every time a client or page is created -- guarantees unique client / page ids
 			size_t c_count;
 			size_t p_count;
+
+			Config config;
 
 			std::list<std::shared_ptr<Page>> pages;
 			std::list<std::shared_ptr<Client>> clients;
@@ -66,7 +81,7 @@ namespace giga {
 			std::shared_ptr<cachepp::SimpleSerialCache<Page>> cache;
 
 			// because I'm stupid and can't figure out fine-grained locking on doubly-linked lists
-			std::recursive_mutex l;
+			std::shared_ptr<std::recursive_mutex> l;
 	};
 }
 
