@@ -28,7 +28,7 @@ namespace giga {
 			size_t m_page_size;
 	};
 
-	class File {
+	class File : public std::enable_shared_from_this<File> {
 		public:
 			File(std::string filename, std::string mode, Config config = Config(1024, 1024));
 

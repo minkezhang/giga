@@ -3,8 +3,6 @@
 #include <mutex>
 #include <string>
 
-#include <iostream>
-
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 
@@ -42,7 +40,7 @@ std::string giga::File::get_filename() { return(this->filename); }
 std::string giga::File::get_mode() { return(this->mode); }
 
 std::shared_ptr<giga::Client> giga::File::open() {
-	std::shared_ptr<giga::Client> c (new giga::Client());
+	std::shared_ptr<giga::Client> c (new giga::Client(c_count++, this->shared_from_this()));
 	this->clients.push_back(c);
 	return(c);
 }

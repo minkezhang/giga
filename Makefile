@@ -20,18 +20,23 @@ OBJECTS=$(SOURCES:.cc=.o)
 
 EXECUTABLE=giga.app
 
-.PHONY: all test clean
+.PHONY: all test clean prep
 
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
 	$(CC) $(CFLAGS) $(INCLUDE_LIBS) $(INCLUDE) $(OBJECTS) -o $@ $(LIBS)
 
+# prep test files
+prep:
+	@echo "hello world!" > "tests/files/giga-file-read"
+	@echo "foo\n" > "tests/files/foo"
+
 # remember to run unit tests
-test: clean $(EXECUTABLE)
-	# set ulimit -c unlimited to get a core dump and analyze via gdb
-	#	cf. http://bit.ly/1zlOj8u, http://bit.ly/1n2ONGD, http://bit.ly/1n2ONGD, http://bit.ly/VCQ0yM
+test: clean $(EXECUTABLE) prep
+	@# set ulimit -c unlimited to get a core dump and analyze via gdb
+	@#	cf. http://bit.ly/1zlOj8u, http://bit.ly/1n2ONGD, http://bit.ly/1n2ONGD, http://bit.ly/VCQ0yM
 	ulimit -c unlimited && ./$(EXECUTABLE) | tee results.log
 
 clean:
-	rm -f $(EXECUTABLE) *.o *.log core
+	@rm -f $(EXECUTABLE) *.o *.log core
