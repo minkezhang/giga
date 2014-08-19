@@ -19,11 +19,15 @@ TEST_CASE("giga|file-open") {
 }
 
 TEST_CASE("giga|file-seek") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r"));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 2)));
 	std::shared_ptr<giga::Client> c = f->open();
+	REQUIRE(f->get_size() == 13);
 	REQUIRE(c->seek(2, true) == 2);
-	REQUIRE(c->seek(2, false) == 0);
-	REQUIRE(c->seek(100, true) == 4);
+	REQUIRE(c->seek(1, false) == 1);
+	REQUIRE(c->seek(1, false) == 0);
+	REQUIRE(c->seek(9, true) == 9);
+	REQUIRE(c->seek(3, false) == 6);
+	REQUIRE(c->seek(100, true) == 13);
 	REQUIRE(c->seek(100, false) == 0);
 	c->close();
 }

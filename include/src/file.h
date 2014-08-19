@@ -69,6 +69,8 @@ namespace giga {
 			std::string get_filename();
 			std::string get_mode();
 
+			size_t get_size();
+
 		private:
 			std::string filename;
 			std::string mode;
@@ -89,6 +91,8 @@ namespace giga {
 
 			// because I'm stupid and can't figure out fine-grained locking on doubly-linked lists
 			std::shared_ptr<std::recursive_mutex> l;
+
+			void align(const std::shared_ptr<Client>& client);
 	};
 }
 

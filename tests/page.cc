@@ -27,13 +27,15 @@ TEST_CASE("giga|page") {
 
 	REQUIRE(p.get_size() == 4);
 	REQUIRE_THROWS_AS(p.probe(10, 0, true), exceptionpp::InvalidOperation);
+
 	REQUIRE(p.probe(0, 2, true) == 2);
-	REQUIRE(p.probe(0, 10, true) == 4);
-	REQUIRE(p.probe(0, 1, false) == 0);
+	REQUIRE(p.probe(0, 9, true) == 4);
 	REQUIRE(p.probe(1, 2, true) == 2);
-	REQUIRE(p.probe(1, 10, true) == 3);
-	REQUIRE(p.probe(1, 10, false) == 1);
+	REQUIRE(p.probe(1, 9, true) == 3);
 	REQUIRE(p.probe(3, 2, true) == 1);
+
+	REQUIRE(p.probe(0, 1, false) == 0);
+	REQUIRE(p.probe(1, 9, false) == 1);
 	REQUIRE(p.probe(3, 1, false) == 1);
-	REQUIRE(p.probe(3, 10, false) == 3);
+	REQUIRE(p.probe(3, 9, false) == 3);
 }

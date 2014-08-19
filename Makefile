@@ -30,7 +30,7 @@ $(EXECUTABLE): $(OBJECTS)
 # prep test files
 prep:
 	@echo "hello world!" > "tests/files/giga-file-read"
-	@echo "foo\n" > "tests/files/foo"
+	@echo "foo" > "tests/files/foo"
 
 # remember to run unit tests
 test: clean $(EXECUTABLE) prep

@@ -34,6 +34,7 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 	}
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
 }
+
 giga::File::~File() {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	for(std::list<std::shared_ptr<Client>>::iterator it = this->clients.begin(); it != this->clients.end(); ++it) {
@@ -42,33 +43,58 @@ giga::File::~File() {
 	}
 }
 
+size_t giga::File::get_size() { return(this->size); }
+
+void giga::File::align(const std::shared_ptr<giga::Client>& client) {
+	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+	if((*(info->get_page())) == this->pages.front()) {
+		info->set_page(std::next(info->get_page(), 1));
+		info->set_page_offset(0);
+	}
+	if((*(info->get_page())) == this->pages.back()) {
+		info->set_page(std::prev(info->get_page(), 1));
+		info->set_page_offset((*(info->get_page()))->get_size());
+	}
+}
+
 size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bool is_forward) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 	if(len != 0) {
+		this->align(client);
 		if(is_forward) {
-			while(len > 0 && info->get_page() != this->pages.end()) {
-				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+			while(len > 0 && (*(info->get_page())) != this->pages.back()) {
+				size_t n_bytes;
+				try {
+					n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+				} catch(const exceptionpp::InvalidOperation& e) {
+					break;
+				}
 				info->set_file_offset(info->get_file_offset() + n_bytes);
 
-				if(info->get_page_offset() + n_bytes == (*(info->get_page()))->get_size()) {
+				if(info->get_page_offset() + n_bytes < (*(info->get_page()))->get_size()) {
+					info->set_page_offset(info->get_page_offset() + n_bytes);
+				} else {
 					info->set_page_offset(0);
 					info->set_page(std::next(info->get_page(), 1));
-				} else {
-					info->set_page_offset(info->get_page_offset() + n_bytes);
 				}
 				len -= n_bytes;
 			}
 		} else {
-			while(len > 0 && info->get_page() != this->pages.begin()) {
-				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+			while(len > 0 && (*(info->get_page())) != this->pages.front()) {
+				size_t n_bytes;
+				try {
+					n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+				} catch(const exceptionpp::InvalidOperation& e) {
+					break;
+				}
 				info->set_file_offset(info->get_file_offset() - n_bytes);
 
-				if(info->get_page_offset() - n_bytes == 0) {
-					info->set_page(std::prev(info->get_page(), 1));
-					info->set_page_offset((*(info->get_page()))->get_size() - 1);
-				} else {
+				if(info->get_page_offset() > n_bytes) {
 					info->set_page_offset(info->get_page_offset() - n_bytes);
+				} else {
+					info->set_page(std::prev(info->get_page(), 1));
+					info->set_page_offset((*(info->get_page()))->get_size());
 				}
 				len -= n_bytes;
 			}

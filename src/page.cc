@@ -16,7 +16,7 @@ size_t giga::Page::get_size() { return(this->size); }
 void giga::Page::set_size(size_t size) { this->size = size; }
 
 size_t giga::Page::probe(size_t offset, size_t len, bool is_forward) {
-	if(offset >= this->get_size()) {
+	if(offset > this->get_size()) {
 		throw(exceptionpp::InvalidOperation("giga::Page::probe", "offset is invalid"));
 	}
 	if(is_forward) {
