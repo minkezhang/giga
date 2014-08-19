@@ -64,12 +64,7 @@ size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bo
 		this->align(client);
 		if(is_forward) {
 			while(len > 0 && (*(info->get_page())) != this->pages.back()) {
-				size_t n_bytes;
-				try {
-					n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
-				} catch(const exceptionpp::InvalidOperation& e) {
-					break;
-				}
+				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
 				info->set_file_offset(info->get_file_offset() + n_bytes);
 
 				if(info->get_page_offset() + n_bytes < (*(info->get_page()))->get_size()) {
@@ -82,12 +77,7 @@ size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bo
 			}
 		} else {
 			while(len > 0 && (*(info->get_page())) != this->pages.front()) {
-				size_t n_bytes;
-				try {
-					n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
-				} catch(const exceptionpp::InvalidOperation& e) {
-					break;
-				}
+				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
 				info->set_file_offset(info->get_file_offset() - n_bytes);
 
 				if(info->get_page_offset() > n_bytes) {
