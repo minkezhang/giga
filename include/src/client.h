@@ -23,6 +23,7 @@ namespace giga {
 			void open();
 			size_t get_pos();
 			size_t seek(size_t len, bool is_forward);
+			std::string read(size_t len);
 
 		private:
 			cachepp::identifier id;

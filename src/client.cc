@@ -30,6 +30,14 @@ void giga::Client::close() {
 	this->set_is_closed(true);
 }
 
+std::string giga::Client::read(size_t len) {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	if(this->file) {
+		return(this->file->r(this->shared_from_this(), len));
+	}
+	return("");
+}
+
 size_t giga::Client::seek(size_t len, bool is_forward) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->file) {
