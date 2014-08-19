@@ -31,9 +31,17 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
 	for(size_t i = 0; i < this->size; i += this->config.get_i_page_size()) {
-		this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, i, (this->size - i) > this->config.get_i_page_size() ? this->config.get_i_page_size() : (this->size - i))));
+		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, this->filename, i, (this->size - i) > this->config.get_i_page_size() ? this->config.get_i_page_size() : (this->size - i)));
+		this->pages.push_back(p);
 	}
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
+}
+giga::File::~File() {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	for(std::list<std::shared_ptr<Client>>::iterator it = this->clients.begin(); it != this->clients.end(); ++it) {
+		(*it)->close();
+		(*it).reset();
+	}
 }
 
 size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bool is_forward) {
@@ -52,13 +60,16 @@ size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bo
 		} else {
 			while(len > 0 && (std::prev(info->get_page(), 1) != this->pages.begin())) {
 				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+				std::cout << "  giga::File::s -- offset a: " << info->get_file_offset() << std::endl;
 				info->set_file_offset(info->get_file_offset() - n_bytes);
+				std::cout << "  giga::File::s -- offset b: " << info->get_file_offset() << std::endl;
 				info->set_page(std::prev(info->get_page(), 1));
 				info->set_page_offset(info->get_page_offset() - n_bytes);
 				len -= n_bytes;
 			}
 		}
 	}
+	std::cout << "  giga::File::s -- offset: " << info->get_file_offset() << std::endl;
 	return(info->get_file_offset());
 }
 
@@ -104,7 +115,11 @@ std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Clien
 
 	std::shared_ptr<giga::ClientData> cd (new giga::ClientData(c->get_identifier()));
 
-	cd->set_page(this->pages.begin());
+	cd->set_page(std::next(this->pages.begin(), 1));;
+	while((*(cd->get_page()))->get_size() == 0) {
+		cd->set_page(std::next(cd->get_page(), 1));
+	}
+	std::cout << "page size: " << (*(cd->get_page()))->get_size() << std::endl;
 	cd->set_file_offset(0);
 	cd->set_page_offset(0);
 

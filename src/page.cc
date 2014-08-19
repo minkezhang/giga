@@ -26,9 +26,9 @@ void giga::Page::set_filename(std::string filename) { this->filename = filename;
 
 std::string giga::Page::get_filename() {
 	if(this->is_dirty) {
-		std::ostringstream path;
-		std::ostringstream buf;
-		buf << filename << "_" << this->id;
+		std::stringstream path;
+		std::stringstream buf;
+		buf << filename << "_" << this->get_identifier();
 		path << "/tmp/" << md5(buf.str());
 		return(path.str());
 	} else {
@@ -49,20 +49,20 @@ void giga::Page::aux_load() {
 
 	// data buffer is NOT null-terminated -- note that we could have made it so, by setting size to this->size + 1
 	// because data buffer is not null-terminated, we must manually pass in the size of the buffer to this->data.assign()
-	char *data = (char *) calloc(this->size, sizeof(char));
+	char *data = (char *) calloc(this->get_size(), sizeof(char));
 
-	if(fread((void *) data, sizeof(char), this->size, fp) < this->size) {
+	if(fread((void *) data, sizeof(char), this->get_size(), fp) < this->get_size()) {
 		throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
 	}
 	fclose(fp);
 
-	this->data.insert(this->data.end(), data, data + this->size);
+	this->data.insert(this->data.end(), data, data + this->get_size());
 
 	free((void *) data);
 }
 
 void giga::Page::aux_unload() {
-	this->size = this->data.size();
+	this->set_size(this->data.size());
 
 	FILE *fp = fopen(this->get_filename().c_str(), "w");
 	fputs(std::string(this->data.begin(), this->data.end()).c_str(), fp);

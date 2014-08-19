@@ -32,6 +32,7 @@ namespace giga {
 	class File : public std::enable_shared_from_this<File> {
 		public:
 			File(std::string filename, std::string mode, Config config = Config(1024, 1024));
+			~File();
 
 			/**
 			 * returns the string read from the file
