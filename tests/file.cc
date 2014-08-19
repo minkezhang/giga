@@ -1,8 +1,6 @@
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
-#include <iostream>
-
 #include "src/file.h"
 
 TEST_CASE("giga|file") {
@@ -21,7 +19,6 @@ TEST_CASE("giga|file-open") {
 }
 
 TEST_CASE("giga|file-seek") {
-	std::cout << "file-seek" << std::endl;
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r"));
 	std::shared_ptr<giga::Client> c = f->open();
 	REQUIRE(c->seek(2, true) == 2);
