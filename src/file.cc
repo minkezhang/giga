@@ -4,8 +4,6 @@
 #include <mutex>
 #include <string>
 
-#include <iostream>
-
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 
@@ -46,30 +44,36 @@ giga::File::~File() {
 
 size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bool is_forward) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
-	std::cout << "  giga::File::s" << std::endl;
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 	if(len != 0) {
 		if(is_forward) {
-			while(len > 0 && (std::next(info->get_page(), 1) != this->pages.end())) {
+			while(len > 0 && info->get_page() != this->pages.end()) {
 				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
 				info->set_file_offset(info->get_file_offset() + n_bytes);
-				info->set_page_offset(info->get_page_offset() - n_bytes);
-				info->set_page(std::next(info->get_page(), 1));
+
+				if(info->get_page_offset() + n_bytes == (*(info->get_page()))->get_size()) {
+					info->set_page_offset(0);
+					info->set_page(std::next(info->get_page(), 1));
+				} else {
+					info->set_page_offset(info->get_page_offset() + n_bytes);
+				}
 				len -= n_bytes;
 			}
 		} else {
-			while(len > 0 && (std::prev(info->get_page(), 1) != this->pages.begin())) {
+			while(len > 0 && info->get_page() != this->pages.begin()) {
 				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
-				std::cout << "  giga::File::s -- offset a: " << info->get_file_offset() << std::endl;
 				info->set_file_offset(info->get_file_offset() - n_bytes);
-				std::cout << "  giga::File::s -- offset b: " << info->get_file_offset() << std::endl;
-				info->set_page(std::prev(info->get_page(), 1));
-				info->set_page_offset(info->get_page_offset() - n_bytes);
+
+				if(info->get_page_offset() - n_bytes == 0) {
+					info->set_page(std::prev(info->get_page(), 1));
+					info->set_page_offset((*(info->get_page()))->get_size() - 1);
+				} else {
+					info->set_page_offset(info->get_page_offset() - n_bytes);
+				}
 				len -= n_bytes;
 			}
 		}
 	}
-	std::cout << "  giga::File::s -- offset: " << info->get_file_offset() << std::endl;
 	return(info->get_file_offset());
 }
 
@@ -115,11 +119,10 @@ std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Clien
 
 	std::shared_ptr<giga::ClientData> cd (new giga::ClientData(c->get_identifier()));
 
-	cd->set_page(std::next(this->pages.begin(), 1));;
+	cd->set_page(this->pages.begin());
 	while((*(cd->get_page()))->get_size() == 0) {
 		cd->set_page(std::next(cd->get_page(), 1));
 	}
-	std::cout << "page size: " << (*(cd->get_page()))->get_size() << std::endl;
 	cd->set_file_offset(0);
 	cd->set_page_offset(0);
 

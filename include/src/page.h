@@ -12,7 +12,13 @@ namespace giga {
 			Page(cachepp::identifier id, std::string filename, size_t file_offset, size_t size, bool is_dirty = false);
 
 			size_t get_size();
-			// returns the number of bytes to END or BEGINNING if traveling LEN bytes from the offset
+			/**
+			 * returns the number of bytes to END or BEGINNING if traveling LEN bytes from the offset
+			 *    v -- offset = 3
+			 * abc|defg
+			 * max length backward == 3
+			 * max length forward == 4
+			 */
 			size_t probe(size_t offset, size_t len, bool is_forward);
 
 		private:
