@@ -11,7 +11,16 @@ giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offse
 	this->is_dirty = is_dirty;
 }
 
+size_t giga::Page::get_size() { return(this->size); }
 void giga::Page::set_size(size_t size) { this->size = size; }
+
+size_t giga::Page::probe(size_t offset, size_t len, bool is_forward) {
+	if(is_forward) {
+		return(this->get_size() - offset > len ? this->get_size() - offset : len);
+	} else {
+		return(offset > len ? offset : len);
+	}
+}
 
 void giga::Page::set_filename(std::string filename) { this->filename = filename; }
 

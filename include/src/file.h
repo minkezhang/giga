@@ -2,6 +2,7 @@
 #define _GIGA_FILE_H
 
 #include <list>
+#include <map>
 #include <memory>
 #include <mutex>
 #include <string>
@@ -52,7 +53,12 @@ namespace giga {
 			 */
 			size_t i(const std::shared_ptr<Client>& client, std::string val);
 
-			std::shared_ptr<Client> open();
+			/**
+			 * seek op -- returns global position
+			 */
+			size_t s(const std::shared_ptr<Client>& client, size_t len, bool is_forward);
+
+			std::shared_ptr<Client> open(const std::shared_ptr<giga::Client>& client = NULL);
 			void close(const std::shared_ptr<Client>& client);
 			void save();
 
@@ -76,7 +82,7 @@ namespace giga {
 
 			std::list<std::shared_ptr<Page>> pages;
 			std::list<std::shared_ptr<Client>> clients;
-			std::list<std::shared_ptr<ClientData>> lookaside;
+			std::map<cachepp::identifier, std::shared_ptr<ClientData>> lookaside;
 
 			std::shared_ptr<cachepp::SimpleSerialCache<Page>> cache;
 

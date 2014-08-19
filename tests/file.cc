@@ -11,6 +11,25 @@ TEST_CASE("giga|file") {
 	REQUIRE(f.get_mode().compare("r") == 0);
 }
 
+TEST_CASE("giga|file-open") {
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r"));
+	std::shared_ptr<giga::Client> c = f->open();
+	REQUIRE(c->get_pos() == 0);
+}
+
+TEST_CASE("giga|file-seek") {
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r"));
+	std::shared_ptr<giga::Client> c = f->open();
+	REQUIRE(c->seek(2, true) == 2);
+	REQUIRE(c->get_pos() == 2);
+	REQUIRE(c->seek(2, false) == 2);
+	REQUIRE(c->get_pos() == 0);
+	REQUIRE(c->seek(100, true) == 4);
+	REQUIRE(c->get_pos() == 4);
+	REQUIRE(c->seek(100, false) == 4);
+	REQUIRE(c->get_pos() == 0);
+}
+
 TEST_CASE("giga|file-read") {
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r"));
 	std::shared_ptr<giga::Client> c = f->open();
