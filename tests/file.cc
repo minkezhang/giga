@@ -56,6 +56,14 @@ TEST_CASE("giga|file-read") {
 	c->close();
 }
 
+TEST_CASE("giga|file-erase") {
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
+	std::shared_ptr<giga::Client> c_1 = f->open();
+	std::shared_ptr<giga::Client> c_2 = f->open();
+
+	REQUIRE(c_1->erase(0) == 0);
+}
+
 TEST_CASE("giga|file-insert") {
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c_1 = f->open();

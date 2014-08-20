@@ -50,6 +50,14 @@ size_t giga::Client::write(std::string buffer, bool is_insert) {
 	return(0);
 }
 
+size_t giga::Client::erase(size_t len) {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	if(this->file) {
+		return(this->file->d(this->shared_from_this(), len));
+	}
+	return(0);
+}
+
 size_t giga::Client::seek(size_t len, bool is_forward) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->file) {
