@@ -25,9 +25,10 @@ namespace giga {
 			size_t get_m_page_size();
 
 			/**
-			 * get maximum number of bytes able to be written to the page before reaching max size
+			 * get maximum number of bytes able to be written (starting at offset) to the page before reaching max size
+			 * writing this many bytes will CLEAR ALL DATA from the page after the offset
 			 */
-			size_t probe(size_t page_size, size_t len);
+			size_t probe(const std::shared_ptr<Page>& page, size_t offset, size_t len);
 
 		private:
 			size_t i_page_size;

@@ -7,10 +7,15 @@
 
 TEST_CASE("giga|config-probe") {
 	giga::Config c = giga::Config(100, 200);
-	REQUIRE(c.probe(100, 1000) == 100);
-	REQUIRE(c.probe(100, 10) == 10);
-	REQUIRE(c.probe(100, 0) == 0);
-	REQUIRE(c.probe(200, 1) == 0);
+	std::shared_ptr<giga::Page> p (new giga::Page(1, "", 0, 100, false));
+	REQUIRE(c.probe(p, 0, 1000) == 200);
+	REQUIRE(c.probe(p, 0, 10) == 10);
+	REQUIRE(c.probe(p, 10, 10) == 10);
+	REQUIRE(c.probe(p, 10, 90) == 90);
+	REQUIRE(c.probe(p, 10, 1000) == 190);
+	REQUIRE(c.probe(p, 100, 1000) == 100);
+	REQUIRE(c.probe(p, 100, 10) == 10);
+	REQUIRE(c.probe(p, 100, 0) == 0);
 }
 
 TEST_CASE("giga|file") {
