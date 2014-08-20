@@ -38,6 +38,18 @@ std::string giga::Client::read(size_t len) {
 	return("");
 }
 
+size_t giga::Client::write(std::string buffer, bool is_insert) {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	if(this->file) {
+		if(is_insert) {
+			return(this->file->i(this->shared_from_this(), buffer));
+		} else {
+			return(this->file->w(this->shared_from_this(), buffer));
+		}
+	}
+	return(0);
+}
+
 size_t giga::Client::seek(size_t len, bool is_forward) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->file) {

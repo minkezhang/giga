@@ -1,6 +1,8 @@
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
+#include <iostream>
+
 #include "src/file.h"
 
 TEST_CASE("giga|file") {
@@ -40,5 +42,20 @@ TEST_CASE("giga|file-read") {
 	REQUIRE(c->read(1).compare("h") == 0);
 	REQUIRE(c->read(2).compare("el") == 0);
 	REQUIRE(c->read(100).compare("lo world!\n") == 0);
+	c->close();
+}
+
+TEST_CASE("giga|file-write") {
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r"));
+	std::shared_ptr<giga::Client> c = f->open();
+	REQUIRE(c->write("") == 0);
+	REQUIRE(c->get_pos() == 0);
+	REQUIRE(c->write("abcde") == 5);
+	REQUIRE(c->get_pos() == 5);
+	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 8);
+	REQUIRE(c->get_pos() == 13);
+	REQUIRE(c->seek(100, false) == 0);
+	// this will change
+	REQUIRE(c->read(100).compare("abcde|world!\n") == 0);
 	c->close();
 }

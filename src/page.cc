@@ -2,8 +2,6 @@
 #include <string>
 #include <vector>
 
-#include <iostream>
-
 #include "libs/cachepp/globals.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
