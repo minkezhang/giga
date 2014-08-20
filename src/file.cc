@@ -4,6 +4,8 @@
 #include <mutex>
 #include <string>
 
+#include <iostream>
+
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 
@@ -14,6 +16,13 @@ giga::Config::Config(size_t i_page_size, size_t m_page_size) : i_page_size(i_pag
 
 size_t giga::Config::get_i_page_size() { return(this->i_page_size); }
 size_t giga::Config::get_m_page_size() { return(this->m_page_size); }
+
+size_t giga::Config::probe(size_t page_size, size_t len) {
+	if(len > this->get_m_page_size() - page_size) {
+		return(this->get_m_page_size() - page_size);
+	}
+	return(len);
+}
 
 giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), mode(mode), size(0), c_count(0), p_count(0), config(config) {
 	this->cache = std::shared_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(2));
@@ -143,12 +152,36 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 		}
 		len -= n_bytes;
 	}
-	return(val.length() - len);
+	return((val.length() - len) + this->i(client, val.substr(val.length() - len)));
 }
 
 size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string val) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
-	return(val.length());
+	/*
+	this->align(client);
+	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+	size_t len = val.length();
+	while(len > 0) {
+		size_t n_bytes = (this->config->probe((*(info->get_page()))->get_size()), len);
+		std::vector<uint8_t> buf = this->cache->r((*(info->get_page())));
+
+		// copy into the buffer
+		std::copy(val.begin() + (val.length() - len), val.begin() + (val.length() - len) + n_bytes, buf.begin() + info->get_page_offset());
+		this->cache->w((*(info->get_page())), buf);
+
+		info->set_file_offset(info->get_file_offset() + n_bytes);
+
+		if(info->get_page_offset() + n_bytes < (*(info->get_page()))->get_size()) {
+			info->set_page_offset(info->get_page_offset() + n_bytes);
+		} else {
+			info->set_page_offset(0);
+			info->set_page(std::next(info->get_page(), 1));
+		}
+		len -= n_bytes;
+	}
+	*/
+	return(0);
+	// return(val.length() - len);
 }
 
 std::string giga::File::get_filename() {

@@ -5,6 +5,14 @@
 
 #include "src/file.h"
 
+TEST_CASE("giga|config-probe") {
+	giga::Config c = giga::Config(100, 200);
+	REQUIRE(c.probe(100, 1000) == 100);
+	REQUIRE(c.probe(100, 10) == 10);
+	REQUIRE(c.probe(100, 0) == 0);
+	REQUIRE(c.probe(200, 1) == 0);
+}
+
 TEST_CASE("giga|file") {
 	REQUIRE_THROWS_AS(giga::File("tests/files/nonexistent", "r"), exceptionpp::InvalidOperation);
 

@@ -24,6 +24,11 @@ namespace giga {
 			size_t get_i_page_size();
 			size_t get_m_page_size();
 
+			/**
+			 * get maximum number of bytes able to be written to the page before reaching max size
+			 */
+			size_t probe(size_t page_size, size_t len);
+
 		private:
 			size_t i_page_size;
 			size_t m_page_size;
