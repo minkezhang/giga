@@ -10,6 +10,7 @@ namespace giga {
 	class Page : public cachepp::LineInterface<std::string> {
 		public:
 			Page(cachepp::identifier id, std::string filename, size_t file_offset, size_t size, bool is_dirty = false);
+			~Page();
 
 			size_t get_size();
 			/**
@@ -24,6 +25,7 @@ namespace giga {
 		private:
 			cachepp::identifier id;
 			std::string filename;
+			std::string cached;
 			// file offset from the filename
 			size_t file_offset;
 			size_t size;

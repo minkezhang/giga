@@ -2,6 +2,8 @@
 #include <string>
 #include <vector>
 
+#include <iostream>
+
 #include "libs/cachepp/globals.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -10,6 +12,13 @@
 
 giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offset, size_t size, bool is_dirty) : cachepp::LineInterface<std::string>::LineInterface(id), filename(filename), file_offset(file_offset), size(size) {
 	this->is_dirty = is_dirty;
+	this->set_filename(this->filename);
+}
+giga::Page::~Page() {
+	// remove tmp file to lessen bloat
+	if(this->cached.compare(this->filename) != 0) {
+		remove(this->get_filename().c_str());
+	}
 }
 
 size_t giga::Page::get_size() { return(this->size); }
@@ -26,17 +35,17 @@ size_t giga::Page::probe(size_t offset, size_t len, bool is_forward) {
 	}
 }
 
-void giga::Page::set_filename(std::string filename) { this->filename = filename; }
+void giga::Page::set_filename(std::string filename) { this->cached = filename; }
 
 std::string giga::Page::get_filename() {
-	if(this->is_dirty) {
+	if(this->get_is_dirty()) {
 		std::stringstream path;
 		std::stringstream buf;
-		buf << filename << "_" << this->get_identifier();
+		buf << this->cached << "_" << this->get_identifier();
 		path << "/tmp/" << md5(buf.str());
 		return(path.str());
 	} else {
-		return(this->filename);
+		return(this->cached);
 	}
 }
 
@@ -77,6 +86,11 @@ void giga::Page::aux_unload() {
 
 	// we are now reading a "clean" file again next time
 	this->set_file_offset(0);
+
+	// remove tmp file to lessen bloat
+	if(this->cached.compare(this->filename) != 0) {
+		remove(this->cached.c_str());
+	}
 	this->set_filename(this->get_filename());
 	this->set_is_dirty(false);
 }
