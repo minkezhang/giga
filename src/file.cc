@@ -4,8 +4,6 @@
 #include <mutex>
 #include <string>
 
-#include <iostream>
-
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 
@@ -177,9 +175,8 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		// adjust client -> page pointers
 		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 			std::shared_ptr<giga::ClientData> tmp_info = it->second;
-			if((std::distance(tmp_info->get_page(), info->get_page()) > 0) || ((std::distance(tmp_info->get_page(), info->get_page()) == 0) && (tmp_info->get_page_offset() > info->get_page_offset()))) {
+			if((std::distance(tmp_info->get_page(), info->get_page()) < 0) || ((std::distance(tmp_info->get_page(), info->get_page()) == 0) && (tmp_info->get_page_offset() > info->get_page_offset()))) {
 				tmp_info->set_page(std::next(tmp_info->get_page(), 1));
-				tmp_info->set_page_offset(0);
 				tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
 			}
 		}
