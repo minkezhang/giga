@@ -11,6 +11,8 @@
 giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offset, size_t size, bool is_dirty) : cachepp::LineInterface<std::string>::LineInterface(id), filename(filename), file_offset(file_offset), size(size) {
 	this->is_dirty = is_dirty;
 	this->set_filename(this->filename);
+	this->data.clear();
+	this->set_checksum(this->hash());
 }
 giga::Page::~Page() {
 	// remove tmp file to lessen bloat
@@ -52,24 +54,26 @@ void giga::Page::set_file_offset(size_t file_offset) { this->file_offset = file_
 void giga::Page::aux_load() {
 	this->data.clear();
 
-	// load data into the page
-	FILE *fp = fopen(this->get_filename().c_str(), "r");
-	if(fseek(fp, this->file_offset, SEEK_SET) == -1) {
-		throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fseek"));
+	if(!this->get_is_dirty()) {
+		// load data into the page
+		FILE *fp = fopen(this->get_filename().c_str(), "r");
+		if(fseek(fp, this->file_offset, SEEK_SET) == -1) {
+			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fseek"));
+		}
+
+		// data buffer is NOT null-terminated -- note that we could have made it so, by setting size to this->size + 1
+		// because data buffer is not null-terminated, we must manually pass in the size of the buffer to this->data.assign()
+		char *data = (char *) calloc(this->get_size(), sizeof(char));
+
+		if(fread((void *) data, sizeof(char), this->get_size(), fp) < this->get_size()) {
+			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
+		}
+		fclose(fp);
+
+		this->data.insert(this->data.end(), data, data + this->get_size());
+
+		free((void *) data);
 	}
-
-	// data buffer is NOT null-terminated -- note that we could have made it so, by setting size to this->size + 1
-	// because data buffer is not null-terminated, we must manually pass in the size of the buffer to this->data.assign()
-	char *data = (char *) calloc(this->get_size(), sizeof(char));
-
-	if(fread((void *) data, sizeof(char), this->get_size(), fp) < this->get_size()) {
-		throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
-	}
-	fclose(fp);
-
-	this->data.insert(this->data.end(), data, data + this->get_size());
-
-	free((void *) data);
 }
 
 void giga::Page::aux_unload() {
@@ -93,9 +97,4 @@ void giga::Page::aux_unload() {
 	this->set_is_dirty(false);
 }
 
-std::string giga::Page::hash() {
-	if(!this->get_is_loaded()) {
-		throw(exceptionpp::RuntimeError("giga::Page::hash", "attempting to hash an unloaded page"));
-	}
-	return(md5(std::string(this->data.begin(), this->data.end())));
-}
+std::string giga::Page::hash() { return(md5(std::string(this->data.begin(), this->data.end()))); }

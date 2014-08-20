@@ -58,17 +58,30 @@ TEST_CASE("giga|file-read") {
 	c->close();
 }
 
+TEST_CASE("giga|file-insert") {
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
+	std::shared_ptr<giga::Client> c_1 = f->open();
+	std::shared_ptr<giga::Client> c_2 = f->open();
+
+	REQUIRE(c_1->seek(1, true) == 1);
+	REQUIRE(c_2->write("foo", true) == 3);
+	REQUIRE(c_2->get_pos() == 4);
+	REQUIRE(c_1->get_pos() == 1);
+	REQUIRE(c_1->read(100).compare("ello world!\n") == 0);
+	c_1->close();
+	c_2->close();
+}
+
 TEST_CASE("giga|file-write") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r"));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c = f->open();
 	REQUIRE(c->write("") == 0);
 	REQUIRE(c->get_pos() == 0);
 	REQUIRE(c->write("abcde") == 5);
 	REQUIRE(c->get_pos() == 5);
 	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 8);
-	REQUIRE(c->get_pos() == 13);
+	REQUIRE(c->get_pos() == 23);
 	REQUIRE(c->seek(100, false) == 0);
-	// this will change
-	REQUIRE(c->read(100).compare("abcde|world!\n") == 0);
+	REQUIRE(c->read(100).compare("abcde|world!\nEXTRAEXTRA") == 0);
 	c->close();
 }

@@ -13,6 +13,8 @@ namespace giga {
 			~Page();
 
 			size_t get_size();
+			void set_size(size_t size);
+
 			/**
 			 * returns the number of bytes to END or BEGINNING if traveling LEN bytes from the offset
 			 *    v -- offset = 3
@@ -34,7 +36,6 @@ namespace giga {
 			 * attribute setters
 			 */
 			void set_filename(std::string filename);
-			void set_size(size_t size);
 			void set_file_offset(size_t file_offset);
 
 			/**
