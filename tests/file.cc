@@ -65,7 +65,7 @@ TEST_CASE("giga|file-insert") {
 
 	REQUIRE(c_1->seek(1, true) == 1);
 	REQUIRE(c_2->write("foo", true) == 3);
-	REQUIRE(c_2->get_pos() == 4);
+	REQUIRE(c_2->get_pos() == 3);
 	REQUIRE(c_1->get_pos() == 1);
 	REQUIRE(c_1->read(100).compare("ello world!\n") == 0);
 	c_1->close();
@@ -79,7 +79,7 @@ TEST_CASE("giga|file-write") {
 	REQUIRE(c->get_pos() == 0);
 	REQUIRE(c->write("abcde") == 5);
 	REQUIRE(c->get_pos() == 5);
-	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 8);
+	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 18);
 	REQUIRE(c->get_pos() == 23);
 	REQUIRE(c->seek(100, false) == 0);
 	REQUIRE(c->read(100).compare("abcde|world!\nEXTRAEXTRA") == 0);

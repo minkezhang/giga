@@ -156,6 +156,7 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 		}
 		len -= n_bytes;
 	}
+
 	return((val.length() - len) + this->i(client, val.substr(val.length() - len)));
 }
 
@@ -200,7 +201,7 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		len -= n_bytes;
 	}
 
-	return(len);
+	return(val.length() - len);
 }
 
 std::string giga::File::get_filename() {
