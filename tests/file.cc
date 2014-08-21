@@ -73,15 +73,20 @@ TEST_CASE("giga|file-erase") {
 
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
-	REQUIRE(c_2->seek(1, true) == 1);
-	REQUIRE(c_1->get_pos() == 0);
-	REQUIRE(c_2->get_pos() == 1);
+	REQUIRE(c_1->seek(1, true) == 1);
+	REQUIRE(c_2->seek(2, true) == 2);
+	REQUIRE(c_1->get_pos() == 1);
+	REQUIRE(c_2->get_pos() == 2);
 
 	REQUIRE(c_1->erase(1) == 1);
-	REQUIRE(c_2->get_pos() == 0);
-	REQUIRE(c_1->get_pos() == 0);
-	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
-	REQUIRE(c_1->read(100).compare("llo world!\n") == 0);
+	REQUIRE(c_1->get_pos() == 1);
+	REQUIRE(c_2->get_pos() == 1);
+	REQUIRE(c_1->read(100).compare("lo world!\n") == 0);
+	REQUIRE(c_2->read(100).compare("lo world!\n") == 0);
+	REQUIRE(c_1->seek(0, true) == 0);
+	REQUIRE(c_2->seek(0, true) == 0);
+	REQUIRE(c_2->read(100).compare("hlo world!\n") == 0);
+	REQUIRE(c_1->read(100).compare("hlo world!\n") == 0);
 
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
