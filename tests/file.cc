@@ -127,11 +127,9 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_1->erase(100) == 8);
 	REQUIRE(c_1->read(100).compare("") == 0);
 	REQUIRE(c_2->read(100).compare("") == 0);
-
-	// REQUIRE(f->get_size() == 0);
-
-	// REQUIRE(c_1->get_pos() == 0);
-	// REQUIRE(c_2->get_pos() == 0);
+	REQUIRE(f->get_size() == 0);
+	REQUIRE(c_1->get_pos() == 0);
+	REQUIRE(c_2->get_pos() == 0);
 
 	c_1->close();
 	c_2->close();
