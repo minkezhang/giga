@@ -4,6 +4,8 @@
 #include <mutex>
 #include <string>
 
+#include <iostream>
+
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 
@@ -39,8 +41,8 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 	fclose(fp);
 
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
-	for(size_t i = 0; i < this->size; i += this->config.get_i_page_size()) {
-		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, this->filename, i, (this->size - i) > this->config.get_i_page_size() ? this->config.get_i_page_size() : (this->size - i)));
+	for(size_t i = 0; i < this->get_size(); i += this->config.get_i_page_size()) {
+		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, this->filename, i, (this->get_size() - i) > this->config.get_i_page_size() ? this->config.get_i_page_size() : (this->get_size() - i)));
 		this->pages.push_back(p);
 	}
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
@@ -55,6 +57,7 @@ giga::File::~File() {
 }
 
 size_t giga::File::get_size() { return(this->size); }
+void giga::File::set_size(size_t size) { this->size = size; }
 
 void giga::File::align(const std::shared_ptr<giga::Client>& client) {
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
@@ -158,17 +161,18 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 
 size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
-/*
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 
-	while(len > 0) {
+	while(len > 0 && (*(info->get_page())) != this->pages.back()) {
 		size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, false);
-		std::vector<uint8_t> buf = this->cache->read((*(info->get_info())));
+		std::vector<uint8_t> buf = this->cache->r((*(info->get_page())));
 
 		// adjust client -> page pointers
 		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 			std::shared_ptr<giga::ClientData> tmp_info = it->second;
+			std::cout << "    giga::File::d -- tmp_info: " << tmp_info << ", info: " << info << std::endl;
+			std::cout << "    giga::File::d -- tmp_info offset: " << (*(tmp_info->get_page()))->get_size() << ", info: " << info << std::endl;
 			if(std::distance(tmp_info->get_page(), info->get_page()) < 0) {
 				if(n_bytes == (*(info->get_page()))->get_size()) {
 					tmp_info->set_page(std::prev(tmp_info->get_page(), 1));
@@ -176,30 +180,32 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 				tmp_info->set_file_offset(tmp_info->get_file_offset() - n_bytes);
 			}
 			if((std::distance(tmp_info->get_page(), info->get_page()) == 0) && (tmp_info->get_page_offset() > info->get_page_offset())) {
-				if(n_bytes == (*(info->get_page()))->get_size()) {
-					tmp_info->set_page(std::prev(tmp_info->get_page(), 1));
-				} else {
-				}
-				// tmp_info->set_page(std::next(tmp_info->get_page(), 1));
-				tmp_info->set_file_offset(tmp_info->get_file_offset() - n_bytes);
+				size_t tmp_n_bytes = (*(tmp_info->get_page()))->probe(tmp_info->get_page_offset(), n_bytes, false);
+				tmp_info->set_page_offset(tmp_info->get_file_offset() - tmp_n_bytes);
+				tmp_info->set_file_offset(tmp_info->get_file_offset() - tmp_n_bytes);
 			}
 		}
 
 		if(n_bytes == (*(info->get_page()))->get_size()) {
-			this->pages.erase(info->get_page()--);
+			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+				std::shared_ptr<giga::ClientData> tmp_info = it->second;
+				if(std::distance(tmp_info->get_page(), info->get_page()) == 0) {
+					tmp_info->set_page(std::prev(tmp_info->get_page(), 1));
+					tmp_info->set_page_offset((*(tmp_info->get_page()))->get_size());
+				}
+			}
+			std::cout << "    giga::File::d -- erasing page" << std::endl;
+			this->pages.erase(std::next(info->get_page(), 1));
+		} else {
+			// write to page
+			buf.erase(buf.begin() + info->get_page_offset(), buf.end());
+			this->cache->w((*(info->get_page())), buf);
+			(*(info->get_page()))->set_size(buf.size());
 		}
 
-		// split page
-		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, buf.size() - info->get_page_offset(), true));
-		this->pages.insert(std::next(info->get_page(), 1), p);
-		this->cache->w(p, std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end()));
-
-		// write to page
-		buf.erase(buf.begin() + info->get_page_offset(), buf.end());
-		this->cache->w((*(info->get_page())), buf);
-		(*(info->get_page()))->set_size(buf.size());
+		this->set_size(this->get_size() - n_bytes);
+		std::cout << this->get_size() << std::endl;
 	}
-*/
 	return(len);
 }
 
@@ -242,6 +248,7 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 			info->set_page(std::next(info->get_page(), 1));
 		}
 		len -= n_bytes;
+		this->set_size(this->get_size() + n_bytes);
 	}
 
 	return(val.length() - len);

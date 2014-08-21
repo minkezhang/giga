@@ -99,6 +99,7 @@ namespace giga {
 			std::shared_ptr<std::recursive_mutex> l;
 
 			void align(const std::shared_ptr<Client>& client);
+			void set_size(size_t size);
 	};
 }
 
