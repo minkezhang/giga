@@ -98,7 +98,6 @@ TEST_CASE("giga|file-erase") {
 	c_1 = f->open();
 	c_2 = f->open();
 
-	std::cout << "REQUIRE(c_1->erase(2))" << std::endl;
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
 	REQUIRE(c_2->seek(2, true) == 2);
@@ -108,6 +107,31 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_2->get_pos() == 0);
 	REQUIRE(c_1->read(100).compare("llo world!\n") == 0);
 	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
+
+	REQUIRE(c_1->seek(100, false) == 0);
+	REQUIRE(c_2->seek(100, false) == 0);
+	REQUIRE(c_2->seek(3, true) == 3);
+
+	REQUIRE(c_1->erase(2) == 2);
+	REQUIRE(c_1->get_pos() == 0);
+	REQUIRE(c_2->get_pos() == 1);
+
+	REQUIRE(c_1->read(100).compare("o world!\n") == 0);
+	REQUIRE(c_2->read(100).compare(" world!\n") == 0);
+
+	REQUIRE(c_1->erase(100) == 0);
+
+	REQUIRE(c_1->seek(100, false) == 0);
+
+	std::cout << "REQUIRE(c_1->erase(100))" << std::endl;
+	REQUIRE(c_1->erase(100) == 8);
+	REQUIRE(c_1->read(100).compare("") == 0);
+	REQUIRE(c_2->read(100).compare("") == 0);
+
+	// REQUIRE(f->get_size() == 0);
+
+	// REQUIRE(c_1->get_pos() == 0);
+	// REQUIRE(c_2->get_pos() == 0);
 
 	c_1->close();
 	c_2->close();
