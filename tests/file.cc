@@ -66,6 +66,7 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_2->seek(1, true) == 1);
 
 	REQUIRE(c_2->erase(1) == 1);
+	REQUIRE(f->get_size() == 12);
 	REQUIRE(c_1->get_pos() == 0);
 	REQUIRE(c_2->get_pos() == 1);
 	REQUIRE(c_1->read(100).compare("hllo world!\n") == 0);
@@ -79,6 +80,7 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_2->get_pos() == 2);
 
 	REQUIRE(c_1->erase(1) == 1);
+	REQUIRE(f->get_size() == 11);
 	REQUIRE(c_1->get_pos() == 1);
 	REQUIRE(c_2->get_pos() == 1);
 	REQUIRE(c_1->read(100).compare("lo world!\n") == 0);
@@ -107,7 +109,9 @@ TEST_CASE("giga|file-insert") {
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
 	REQUIRE(c_1->seek(1, true) == 1);
+	REQUIRE(f->get_size() == 13);
 	REQUIRE(c_2->write("foo", true) == 3);
+	REQUIRE(f->get_size() == 16);
 	REQUIRE(c_2->get_pos() == 3);
 	REQUIRE(c_1->get_pos() == 4);
 	REQUIRE(c_1->read(100).compare("ello world!\n") == 0);
@@ -116,6 +120,7 @@ TEST_CASE("giga|file-insert") {
 	REQUIRE(c_2->seek(100, false) == 0);
 	REQUIRE(c_1->seek(1, true) == 1);
 	REQUIRE(c_1->write("foo", true) == 3);
+	REQUIRE(f->get_size() == 19);
 	REQUIRE(c_2->get_pos() == 0);
 	REQUIRE(c_2->read(100).compare("ffoooohello world!\n") == 0);
 
@@ -134,6 +139,7 @@ TEST_CASE("giga|file-write") {
 	REQUIRE(c->write("abcde") == 5);
 	REQUIRE(c->get_pos() == 5);
 	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 18);
+	REQUIRE(f->get_size() == 23);
 	REQUIRE(c->get_pos() == 23);
 	REQUIRE(c->seek(100, false) == 0);
 	REQUIRE(c->read(100).compare("abcde|world!\nEXTRAEXTRA") == 0);
