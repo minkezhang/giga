@@ -79,7 +79,6 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_1->get_pos() == 1);
 	REQUIRE(c_2->get_pos() == 2);
 
-	std::cout << "REQUIRE(c_1->erase(1)" << std::endl;
 	REQUIRE(c_1->erase(1) == 1);
 	REQUIRE(f->get_size() == 11);
 	REQUIRE(c_1->get_pos() == 1);
@@ -91,14 +90,24 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_2->read(100).compare("hlo world!\n") == 0);
 	REQUIRE(c_1->read(100).compare("hlo world!\n") == 0);
 
+	c_1->close();
+	c_2->close();
+
+	f.reset();
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 5)));
+	c_1 = f->open();
+	c_2 = f->open();
+
+	std::cout << "REQUIRE(c_1->erase(2))" << std::endl;
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
-	REQUIRE(c_2->seek(7, true) == 7);
+	REQUIRE(c_2->seek(2, true) == 2);
 
-	REQUIRE(c_1->erase(4) == 4);
-	REQUIRE(c_2->get_pos() == 3);
-	REQUIRE(c_1->read(100).compare(" world!\n") == 0);
-	REQUIRE(c_2->read(100).compare("ld!\n") == 0);
+	REQUIRE(c_1->erase(2) == 2);
+	REQUIRE(c_1->get_pos() == 0);
+	REQUIRE(c_2->get_pos() == 0);
+	REQUIRE(c_1->read(100).compare("llo world!\n") == 0);
+	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
 
 	c_1->close();
 	c_2->close();

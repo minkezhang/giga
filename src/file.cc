@@ -191,6 +191,7 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 		}
 
 		if(n_bytes == (*(info->get_page()))->get_size()) {
+			std::cout << "  giga::File::d -- deleting page" << std::endl;
 			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 				std::shared_ptr<giga::ClientData> tmp_info = it->second;
 				if(std::distance(tmp_info->get_page(), info->get_page()) == 0) {
@@ -198,9 +199,9 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 					tmp_info->set_page_offset((*(tmp_info->get_page()))->get_size());
 				}
 			}
-			this->pages.erase(std::next(info->get_page(), 0));
+			this->pages.erase(std::next(info->get_page(), 1));
 		} else {
-			std::cout << "  erasing partial buffer" << std::endl;
+			std::cout << "  giga::File::d -- erasing partial buffer" << std::endl;
 			buf.erase(buf.begin() + info->get_page_offset(), buf.begin() + info->get_page_offset() + n_bytes);
 			this->cache->w((*(info->get_page())), buf);
 			(*(info->get_page()))->set_size(buf.size());
