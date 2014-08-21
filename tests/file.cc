@@ -64,21 +64,33 @@ TEST_CASE("giga|file-erase") {
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
 	REQUIRE(c_2->seek(1, true) == 1);
-	std::cout << "erase 1" << std::endl;
-	REQUIRE(c_1->erase(1) == 1);
-	std::cout << "done er1" << std::endl;
-	REQUIRE(c_2->get_pos() == 0);
-	REQUIRE(c_2->read(100).compare("ello world!\n") == 0);
+
+	REQUIRE(c_2->erase(1) == 1);
+	REQUIRE(c_1->get_pos() == 0);
+	REQUIRE(c_2->get_pos() == 1);
+	REQUIRE(c_1->read(100).compare("hllo world!\n") == 0);
+	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
 
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
+	REQUIRE(c_2->seek(1, true) == 1);
+	REQUIRE(c_1->get_pos() == 0);
+	REQUIRE(c_2->get_pos() == 1);
 
+	REQUIRE(c_1->erase(1) == 1);
+	REQUIRE(c_2->get_pos() == 0);
+	REQUIRE(c_1->get_pos() == 0);
+	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
+	REQUIRE(c_1->read(100).compare("llo world!\n") == 0);
+
+	REQUIRE(c_1->seek(100, false) == 0);
+	REQUIRE(c_2->seek(100, false) == 0);
 	REQUIRE(c_2->seek(7, true) == 7);
-	std::cout << "erase 4" << std::endl;
+
 	REQUIRE(c_1->erase(4) == 4);
-	std::cout << "done er4" << std::endl;
 	REQUIRE(c_2->get_pos() == 3);
-	REQUIRE(c_2->read(100).compare(" world!\n") == 0);
+	REQUIRE(c_1->read(100).compare(" world!\n") == 0);
+	REQUIRE(c_2->read(100).compare("ld!\n") == 0);
 
 	c_1->close();
 	c_2->close();
