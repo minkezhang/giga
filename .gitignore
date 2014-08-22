@@ -22,3 +22,5 @@
 
 # Logging
 *.log
+
+tests/files/*
