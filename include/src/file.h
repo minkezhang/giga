@@ -77,9 +77,13 @@ namespace giga {
 
 			size_t get_size();
 
+			const static uint8_t read_only = 1;
+			const static uint8_t write_only = 2;
+			const static uint8_t dne_create = 4;
+
 		private:
 			std::string filename;
-			std::string mode;
+			uint8_t mode;
 
 			size_t size;
 
@@ -100,6 +104,7 @@ namespace giga {
 
 			void align(const std::shared_ptr<Client>& client);
 			void set_size(size_t size);
+			void set_mode(std::string mode);
 	};
 }
 

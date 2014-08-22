@@ -22,6 +22,16 @@ TEST_CASE("giga|file") {
 	giga::File f = giga::File("tests/files/foo", "r", giga::Config(3, 4));
 	REQUIRE(f.get_filename().compare("tests/files/foo") == 0);
 	REQUIRE(f.get_mode().compare("r") == 0);
+
+	REQUIRE_THROWS_AS(f.i(NULL, ""), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(f.d(NULL, 10), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(f.w(NULL, ""), exceptionpp::InvalidOperation);
+
+	f = giga::File("tests/files/foo", "w", giga::Config(3, 4));
+	REQUIRE_THROWS_AS(f.r(NULL, 10), exceptionpp::InvalidOperation);
+
+	REQUIRE_NOTHROW(giga::File("tests/files/nonexistent", "+"));
+	remove("tests/files/nonexistent");
 }
 
 TEST_CASE("giga|file-open") {
@@ -32,7 +42,7 @@ TEST_CASE("giga|file-open") {
 }
 
 TEST_CASE("giga|file-seek") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 2)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 2)));
 	std::shared_ptr<giga::Client> c = f->open();
 	REQUIRE(f->get_size() == 13);
 	REQUIRE(c->seek(2, true) == 2);
@@ -47,7 +57,7 @@ TEST_CASE("giga|file-seek") {
 }
 
 TEST_CASE("giga|file-read") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 2)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 2)));
 	std::shared_ptr<giga::Client> c = f->open();
 	REQUIRE(c->read(0).compare("") == 0);
 	REQUIRE(c->read(1).compare("h") == 0);
@@ -57,7 +67,7 @@ TEST_CASE("giga|file-read") {
 }
 
 TEST_CASE("giga|file-erase") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 5)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5)));
 	std::shared_ptr<giga::Client> c_1 = f->open();
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
@@ -92,7 +102,7 @@ TEST_CASE("giga|file-erase") {
 	c_2->close();
 
 	f.reset();
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 5)));
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5)));
 	c_1 = f->open();
 	c_2 = f->open();
 
@@ -132,7 +142,7 @@ TEST_CASE("giga|file-erase") {
 	c_2->close();
 
 	f.reset();
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 5)));
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5)));
 	c_1 = f->open();
 	c_2 = f->open();
 
@@ -148,7 +158,7 @@ TEST_CASE("giga|file-erase") {
 }
 
 TEST_CASE("giga|file-insert") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c_1 = f->open();
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
@@ -179,7 +189,7 @@ TEST_CASE("giga|file-insert") {
 }
 
 TEST_CASE("giga|file-write") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c = f->open();
 
 	REQUIRE(c->write("") == 0);
@@ -198,7 +208,7 @@ TEST_CASE("giga|file-write") {
 }
 
 TEST_CASE("giga|file-save") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "r", giga::Config(2, 3)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "rw", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c = f->open();
 
 	REQUIRE(f->get_size() == 0);
@@ -210,7 +220,7 @@ TEST_CASE("giga|file-save") {
 	c->save();
 	c->close();
 
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-save", "r", giga::Config(2, 3)));
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-save", "rw", giga::Config(2, 3)));
 	c = f->open();
 	REQUIRE(f->get_size() == 29);
 	REQUIRE(c->read(100).compare("prependprependabcdefoobarbaz\n") == 0);

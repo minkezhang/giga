@@ -5,6 +5,8 @@
 #include <sstream>
 #include <string>
 
+#include <iostream>
+
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -28,13 +30,21 @@ size_t giga::Config::probe(const std::shared_ptr<giga::Page>& page, size_t offse
 	return(len);
 }
 
-giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), mode(mode), size(0), c_count(0), p_count(0), config(config) {
-	this->cache = std::shared_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(2));
+giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), size(0), c_count(0), p_count(0), config(config) {
 	this->l = std::shared_ptr<std::recursive_mutex> (new std::recursive_mutex);
+
+	this->set_mode(mode);
+
+	this->cache = std::shared_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(2));
 
 	FILE *fp = fopen(this->get_filename().c_str(), "r");
 	if(fp == NULL) {
-		throw(exceptionpp::InvalidOperation("giga::File::File", "opening non-existent file in read-only mode"));
+		if(!(this->mode & giga::File::dne_create)) {
+			throw(exceptionpp::InvalidOperation("giga::File::File", "opening non-existent file in read-only mode"));
+		} else {
+			// create the file
+			fp = fopen(filename.c_str(), "w+");
+		}
 	}
 	fseek(fp, 0, SEEK_END);
 	this->set_size(ftell(fp));
@@ -112,6 +122,11 @@ size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bo
 
 std::string giga::File::r(const std::shared_ptr<giga::Client>& client, size_t len) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::File::read_only)) {
+		throw(exceptionpp::InvalidOperation("giga::File::r", "invalid file operation"));
+	}
+
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 
@@ -136,6 +151,11 @@ std::string giga::File::r(const std::shared_ptr<giga::Client>& client, size_t le
 
 size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string val) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::File::write_only)) {
+		throw(exceptionpp::InvalidOperation("giga::File::w", "invalid file operation"));
+	}
+
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 
@@ -164,6 +184,11 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 
 size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::File::write_only)) {
+		throw(exceptionpp::InvalidOperation("giga::File::d", "invalid file operation"));
+	}
+
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 
@@ -216,6 +241,11 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 
 size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string val) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::File::write_only)) {
+		throw(exceptionpp::InvalidOperation("giga::File::i", "invalid file operation"));
+	}
+
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 
@@ -264,9 +294,33 @@ std::string giga::File::get_filename() {
 	return(this->filename);
 }
 
+void giga::File::set_mode(std::string mode) {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	this->mode = 0;
+	if(mode.find('r') != std::string::npos) {
+		this->mode |= giga::File::read_only;
+	}
+	if(mode.find('w') != std::string::npos) {
+		this->mode |= giga::File::write_only;
+	}
+	if(mode.find('+') != std::string::npos) {
+		this->mode |= giga::File::dne_create;
+	}
+}
+
 std::string giga::File::get_mode() {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
-	return(this->mode);
+	std::stringstream buf;
+	if(this->mode & giga::File::read_only) {
+		buf << 'r';
+	}
+	if(this->mode & giga::File::write_only) {
+		buf << 'w';
+	}
+	if(this->mode & giga::File::dne_create) {
+		buf << '+';
+	}
+	return(buf.str());
 }
 
 std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Client>& client) {
