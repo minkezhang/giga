@@ -40,7 +40,7 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 	FILE *fp = fopen(this->get_filename().c_str(), "r");
 	if(fp == NULL) {
 		if(!(this->mode & giga::File::dne_create)) {
-			throw(exceptionpp::InvalidOperation("giga::File::File", "opening non-existent file in read-only mode"));
+			throw(exceptionpp::InvalidOperation("giga::File::File", "opening non-existent file without explicitly specifying '+' mode"));
 		} else {
 			// create the file
 			fp = fopen(filename.c_str(), "w+");
@@ -124,7 +124,7 @@ std::string giga::File::r(const std::shared_ptr<giga::Client>& client, size_t le
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 
 	if(!(this->mode & giga::File::read_only)) {
-		throw(exceptionpp::InvalidOperation("giga::File::r", "invalid file operation"));
+		throw(exceptionpp::InvalidOperation("giga::File::r", "permission denied"));
 	}
 
 	this->align(client);
@@ -153,7 +153,7 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 
 	if(!(this->mode & giga::File::write_only)) {
-		throw(exceptionpp::InvalidOperation("giga::File::w", "invalid file operation"));
+		throw(exceptionpp::InvalidOperation("giga::File::w", "permission denied"));
 	}
 
 	this->align(client);
@@ -186,7 +186,7 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 
 	if(!(this->mode & giga::File::write_only)) {
-		throw(exceptionpp::InvalidOperation("giga::File::d", "invalid file operation"));
+		throw(exceptionpp::InvalidOperation("giga::File::d", "permission denied"));
 	}
 
 	this->align(client);
@@ -243,7 +243,7 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 
 	if(!(this->mode & giga::File::write_only)) {
-		throw(exceptionpp::InvalidOperation("giga::File::i", "invalid file operation"));
+		throw(exceptionpp::InvalidOperation("giga::File::i", "permission denied"));
 	}
 
 	this->align(client);
