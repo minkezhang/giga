@@ -53,6 +53,8 @@ void giga::Page::set_file_offset(size_t file_offset) { this->file_offset = file_
 
 void giga::Page::aux_load() {
 	this->data.clear();
+	// deallocate the data vector
+	std::vector<uint8_t>().swap(this->data);
 
 	if(!this->get_is_dirty()) {
 		// load data into the page
@@ -84,7 +86,7 @@ void giga::Page::aux_unload() {
 	fclose(fp);
 
 	this->data.clear();
-	this->data.resize(0);
+	std::vector<uint8_t>().swap(this->data);
 
 	// we are now reading a "clean" file again next time
 	this->set_file_offset(0);

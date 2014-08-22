@@ -19,8 +19,4 @@ TEST_CASE("giga|cache-sanity") {
 
 	t.correctness(l, 10000, false);
 	t.performance("SAN", l, line_size, access_pattern, access_pattern_aux, .5, 10000, false);
-	std::cout << t.get_result().to_string(false);
-}
-
-TEST_CASE("giga|cache-LRU") {
 }
