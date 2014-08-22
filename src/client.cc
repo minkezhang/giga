@@ -66,6 +66,14 @@ size_t giga::Client::seek(size_t len, bool is_forward) {
 	return(0);
 }
 
+void giga::Client::save() {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	if(this->file) {
+		return(this->file->save());
+	}
+	return;
+}
+
 void giga::Client::set_is_closed(bool is_closed) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->get_is_closed() == is_closed) { return; }

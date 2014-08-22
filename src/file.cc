@@ -2,12 +2,14 @@
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <sstream>
 #include <string>
 
 #include <iostream>
 
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
+#include "libs/md5/md5.h"
 
 #include "src/file.h"
 #include "src/page.h"
@@ -167,12 +169,10 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 	size_t expected = len;
 
 	while(len > 0) {
-		std::cout << "  giga::File::d -- page id: " << (*(info->get_page()))->get_identifier() << std::endl;
 		size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, true);
 		if(n_bytes == 0) {
 			break;
 		}
-		std::cout << "  giga::File::d -- n_bytes == " << n_bytes << std::endl;
 		std::vector<uint8_t> buf = this->cache->r((*(info->get_page())));
 
 		// adjust client -> page pointers
@@ -181,29 +181,22 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 			if(std::distance(tmp_info->get_page(), info->get_page()) > 0) {
 				tmp_info->set_file_offset(tmp_info->get_file_offset() - n_bytes);
 			} else if((std::distance(tmp_info->get_page(), info->get_page()) == 0) && (tmp_info->get_page_offset() > info->get_page_offset())) {
-				std::cout << "  giga::File::d -- adjusting client OFFS pointer " << it->first << std::endl;
 				size_t tmp_n_bytes = (n_bytes > (tmp_info->get_page_offset() - info->get_page_offset())) ? (tmp_info->get_page_offset() - info->get_page_offset()) : n_bytes;
-				std::cout << "  giga::File::d -- n_bytes to adjust: " << tmp_n_bytes << std::endl;
 				tmp_info->set_page_offset(tmp_info->get_page_offset() - tmp_n_bytes);
 				tmp_info->set_file_offset(tmp_info->get_file_offset() - tmp_n_bytes);
 			}
 		}
 
+		// deleting pages
 		if(n_bytes == (*(info->get_page()))->get_size()) {
-			std::cout << "  giga::File::d -- deleting page" << std::endl;
 			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 				std::shared_ptr<giga::ClientData> tmp_info = it->second;
 				if(std::distance(tmp_info->get_page(), info->get_page()) == 0) {
-					std::cout << "  giga::File::d -- old page size: " << (*(tmp_info->get_page()))->get_size() << std::endl;
-					tmp_info->set_page(std::prev(tmp_info->get_page(), 1));
-					// tmp_info->set_page_offset((*(tmp_info->get_page()))->get_size());
-					tmp_info->set_page_offset(0);
-					std::cout << "  giga::File::d -- new page size: " << (*(tmp_info->get_page()))->get_size() << std::endl;
+					tmp_info->set_page(std::next(tmp_info->get_page(), 1));
 				}
 			}
-			this->pages.erase(std::next(info->get_page(), 1));
+			this->pages.erase(std::prev(info->get_page(), 1));
 		} else {
-			std::cout << "  giga::File::d -- erasing partial buffer" << std::endl;
 			buf.erase(buf.begin() + info->get_page_offset(), buf.begin() + info->get_page_offset() + n_bytes);
 			this->cache->w((*(info->get_page())), buf);
 			(*(info->get_page()))->set_size(buf.size());
@@ -211,8 +204,6 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 
 		len -= n_bytes;
 		this->set_size(this->get_size() - n_bytes);
-
-		std::cout << "  giga::File::d -- len: " << len << std::endl;
 	}
 
 	return(expected - len);
@@ -305,4 +296,20 @@ void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 
 void giga::File::save() {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	std::stringstream name;
+	std::stringstream path;
+
+	name << this->filename << "_" << rand();
+	path << "/tmp/" << md5(name.str());
+
+	FILE *fp = fopen(path.str().c_str(), "w");
+	for(std::list<std::shared_ptr<giga::Page>>::iterator it = this->pages.begin(); it != this->pages.end(); ++it) {
+		std::vector<uint8_t> buf = this->cache->r(*it);
+		fputs(std::string(buf.begin(), buf.end()).c_str(), fp);
+	}
+	fclose(fp);
+	rename(path.str().c_str(), this->filename.c_str());
+	remove(path.str().c_str());
+
 }

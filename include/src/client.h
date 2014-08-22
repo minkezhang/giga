@@ -26,6 +26,7 @@ namespace giga {
 			std::string read(size_t len);
 			size_t write(std::string buffer, bool is_insert = false);
 			size_t erase(size_t len);
+			void save();
 
 		private:
 			cachepp::identifier id;
