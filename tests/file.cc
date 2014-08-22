@@ -1,8 +1,6 @@
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
-#include <iostream>
-
 #include "src/file.h"
 
 TEST_CASE("giga|config-probe") {
@@ -107,7 +105,6 @@ TEST_CASE("giga|file-erase") {
 	REQUIRE(c_2->get_pos() == 0);
 	REQUIRE(c_1->read(100).compare("llo world!\n") == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
-	std::cout << c_2->read(100) << std::endl;
 	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
 
 	REQUIRE(c_1->seek(100, false) == 0);
@@ -124,7 +121,6 @@ TEST_CASE("giga|file-erase") {
 
 	REQUIRE(c_1->seek(100, false) == 0);
 
-	std::cout << "REQUIRE(c_1->erase(100))" << std::endl;
 	REQUIRE(c_1->erase(100) == 9);
 	REQUIRE(c_1->read(100).compare("") == 0);
 	REQUIRE(c_2->read(100).compare("") == 0);
@@ -145,7 +141,7 @@ TEST_CASE("giga|file-erase") {
 
 	REQUIRE(c_1->erase(4) == 4);
 	REQUIRE(c_1->read(100).compare("world!\n") == 0);
-	REQUIRE(c_2->read(100).compare("heworld!\n") == 0);
+	REQUIRE(c_2->read(100).compare("world!\n") == 0);
 
 	c_1->close();
 	c_2->close();
@@ -157,16 +153,18 @@ TEST_CASE("giga|file-insert") {
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
 	REQUIRE(c_1->seek(1, true) == 1);
+
 	REQUIRE(f->get_size() == 13);
 	REQUIRE(c_2->write("foo", true) == 3);
 	REQUIRE(f->get_size() == 16);
-	REQUIRE(c_2->get_pos() == 3);
 	REQUIRE(c_1->get_pos() == 4);
+	REQUIRE(c_2->get_pos() == 3);
 	REQUIRE(c_1->read(100).compare("ello world!\n") == 0);
 
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
 	REQUIRE(c_1->seek(1, true) == 1);
+
 	REQUIRE(c_1->write("foo", true) == 3);
 	REQUIRE(f->get_size() == 19);
 	REQUIRE(c_2->get_pos() == 0);
@@ -183,6 +181,7 @@ TEST_CASE("giga|file-insert") {
 TEST_CASE("giga|file-write") {
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "r", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c = f->open();
+
 	REQUIRE(c->write("") == 0);
 	REQUIRE(c->get_pos() == 0);
 	REQUIRE(c->write("abcde") == 5);
@@ -190,14 +189,18 @@ TEST_CASE("giga|file-write") {
 	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 18);
 	REQUIRE(f->get_size() == 23);
 	REQUIRE(c->get_pos() == 23);
+
 	REQUIRE(c->seek(100, false) == 0);
+
 	REQUIRE(c->read(100).compare("abcde|world!\nEXTRAEXTRA") == 0);
+
 	c->close();
 }
 
 TEST_CASE("giga|file-save") {
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "r", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c = f->open();
+
 	REQUIRE(f->get_size() == 0);
 
 	c->write("abcde");

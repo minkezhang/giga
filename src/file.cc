@@ -5,8 +5,6 @@
 #include <sstream>
 #include <string>
 
-#include <iostream>
-
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -181,12 +179,15 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 		// adjust client -> page pointers
 		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 			std::shared_ptr<giga::ClientData> tmp_info = it->second;
-			if(std::distance(tmp_info->get_page(), info->get_page()) > 0) {
-				tmp_info->set_file_offset(tmp_info->get_file_offset() - n_bytes);
-			} else if((std::distance(tmp_info->get_page(), info->get_page()) == 0) && (tmp_info->get_page_offset() > info->get_page_offset())) {
-				size_t tmp_n_bytes = (n_bytes > (tmp_info->get_page_offset() - info->get_page_offset())) ? (tmp_info->get_page_offset() - info->get_page_offset()) : n_bytes;
-				tmp_info->set_page_offset(tmp_info->get_page_offset() - tmp_n_bytes);
-				tmp_info->set_file_offset(tmp_info->get_file_offset() - tmp_n_bytes);
+			if(tmp_info->get_file_offset() > info->get_file_offset()) {
+				// different pages
+				if(tmp_info->get_page() != info->get_page()) {
+					tmp_info->set_file_offset(tmp_info->get_file_offset() - n_bytes);
+				} else if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
+					size_t tmp_n_bytes = (n_bytes > (tmp_info->get_page_offset() - info->get_page_offset())) ? (tmp_info->get_page_offset() - info->get_page_offset()) : n_bytes;
+					tmp_info->set_page_offset(tmp_info->get_page_offset() - tmp_n_bytes);
+					tmp_info->set_file_offset(tmp_info->get_file_offset() - tmp_n_bytes);
+				}
 			}
 		}
 
@@ -194,10 +195,11 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 		if(n_bytes == (*(info->get_page()))->get_size()) {
 			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 				std::shared_ptr<giga::ClientData> tmp_info = it->second;
-				if(std::distance(tmp_info->get_page(), info->get_page()) == 0) {
+				if((tmp_info != info) && (tmp_info->get_page() == info->get_page())) {
 					tmp_info->set_page(std::next(tmp_info->get_page(), 1));
 				}
 			}
+			info->set_page(std::next(info->get_page(), 1));
 			this->pages.erase(std::prev(info->get_page(), 1));
 		} else {
 			buf.erase(buf.begin() + info->get_page_offset(), buf.begin() + info->get_page_offset() + n_bytes);
@@ -230,7 +232,7 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		// adjust client -> page pointers
 		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 			std::shared_ptr<giga::ClientData> tmp_info = it->second;
-			if((std::distance(tmp_info->get_page(), info->get_page()) < 0) || ((std::distance(tmp_info->get_page(), info->get_page()) == 0) && (tmp_info->get_page_offset() > info->get_page_offset()))) {
+			if(tmp_info->get_file_offset() > info->get_file_offset()) {
 				tmp_info->set_page(std::next(tmp_info->get_page(), 1));
 				tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
 			}
