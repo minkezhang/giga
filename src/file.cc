@@ -39,10 +39,13 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 		throw(exceptionpp::InvalidOperation("giga::File::File", "opening non-existent file in read-only mode"));
 	}
 	fseek(fp, 0, SEEK_END);
-	this->size = ftell(fp);
+	this->set_size(ftell(fp));
 	fclose(fp);
 
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
+	if(this->get_size() == 0) {
+		this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, "", 0, 0, true)));
+	}
 	for(size_t i = 0; i < this->get_size(); i += this->config.get_i_page_size()) {
 		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, this->filename, i, (this->get_size() - i) > this->config.get_i_page_size() ? this->config.get_i_page_size() : (this->get_size() - i)));
 		this->pages.push_back(p);
@@ -277,9 +280,7 @@ std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Clien
 	std::shared_ptr<giga::ClientData> cd (new giga::ClientData(c->get_identifier()));
 
 	cd->set_page(this->pages.begin());
-	while((*(cd->get_page()))->get_size() == 0) {
-		cd->set_page(std::next(cd->get_page(), 1));
-	}
+
 	cd->set_file_offset(0);
 	cd->set_page_offset(0);
 

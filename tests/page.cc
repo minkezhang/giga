@@ -4,7 +4,17 @@
 #include "src/page.h"
 
 TEST_CASE("giga|page") {
-	giga::Page p = giga::Page(1, "tests/files/foo", 1, 3, false);
+	giga::Page p = giga::Page(1, "tests/files/page-zero-size", 0, 0, false);
+
+	p.load();
+	REQUIRE(p.get_is_loaded() == true);
+	p.unload();
+	REQUIRE(p.get_is_loaded() == false);
+	p.load();
+	REQUIRE(p.get_data().size() == 0);
+	p.unload();
+
+	p = giga::Page(1, "tests/files/foo", 1, 3, false);
 
 	REQUIRE(p.get_identifier() == 1);
 	REQUIRE(p.get_is_dirty() == false);

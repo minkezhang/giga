@@ -198,6 +198,8 @@ TEST_CASE("giga|file-write") {
 TEST_CASE("giga|file-save") {
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "r", giga::Config(2, 3)));
 	std::shared_ptr<giga::Client> c = f->open();
+	REQUIRE(f->get_size() == 0);
+
 	c->write("abcde");
 	c->write("foobarbaz\n");
 	c->seek(100, false);
