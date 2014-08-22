@@ -15,7 +15,7 @@ namespace giga {
 
 	class Client : public std::enable_shared_from_this<Client> {
 		public:
-			Client(cachepp::identifier id, const std::shared_ptr<File>& file);
+			Client(cachepp::identifier id, const std::shared_ptr<File>& file, std::string mode);
 
 			cachepp::identifier get_identifier();
 			bool get_is_closed();
@@ -28,13 +28,20 @@ namespace giga {
 			size_t erase(size_t len);
 			void save();
 
+			std::string get_mode();
+
+			const static uint8_t read_only = 1;
+			const static uint8_t write_only = 2;
+
 		private:
 			cachepp::identifier id;
 			std::shared_ptr<File> file;
 			bool is_closed;
 			std::shared_ptr<std::recursive_mutex> l;
+			uint8_t mode;
 
 			void set_is_closed(bool is_closed);
+			void set_mode(std::string mode);
 	};
 	class ClientData {
 		public:

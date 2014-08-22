@@ -323,13 +323,19 @@ std::string giga::File::get_mode() {
 	return(buf.str());
 }
 
-std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Client>& client) {
+std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Client>& client, std::string mode) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 
 	std::shared_ptr<giga::Client> c;
 	if(client == NULL) {
-		c = std::shared_ptr<giga::Client> (new giga::Client(c_count++, this->shared_from_this()));
+		if(mode.compare("") == 0) {
+			mode = this->get_mode();
+		}
+		c = std::shared_ptr<giga::Client> (new giga::Client(c_count++, this->shared_from_this(), mode));
 	} else {
+		if(mode.compare("") != 0) {
+			throw(exceptionpp::InvalidOperation("giga::File::open", "cannot set mode on an existing client"));
+		}
 		c = client;
 	}
 

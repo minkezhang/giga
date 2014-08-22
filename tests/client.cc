@@ -2,12 +2,13 @@
 #include <memory>
 
 #include "libs/catch/catch.hpp"
+#include "libs/exceptionpp/exception.h"
 
 #include "src/client.h"
 #include "src/page.h"
 
 TEST_CASE("giga|client") {
-	giga::Client c = giga::Client(0, NULL);
+	giga::Client c = giga::Client(0, NULL, "");
 	REQUIRE(c.get_is_closed() == false);
 	c.close();
 	REQUIRE(c.get_is_closed() == true);
@@ -15,6 +16,12 @@ TEST_CASE("giga|client") {
 	REQUIRE(c.get_is_closed() == false);
 
 	REQUIRE(c.seek(100, true) == 0);
+
+	REQUIRE(c.get_mode().compare("") == 0);
+
+	REQUIRE_THROWS_AS(c.read(10), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(c.write("foo"), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(c.erase(10), exceptionpp::InvalidOperation);
 }
 
 TEST_CASE("giga|clientdata") {

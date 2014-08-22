@@ -65,7 +65,7 @@ namespace giga {
 			 */
 			size_t s(const std::shared_ptr<Client>& client, size_t len, bool is_forward);
 
-			std::shared_ptr<Client> open(const std::shared_ptr<giga::Client>& client = NULL);
+			std::shared_ptr<Client> open(const std::shared_ptr<giga::Client>& client = NULL, std::string mode = "");
 			void close(const std::shared_ptr<Client>& client);
 			void save();
 

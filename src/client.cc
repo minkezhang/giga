@@ -1,7 +1,34 @@
+#include <sstream>
+#include <string>
+
+#include "libs/exceptionpp/exception.h"
+
 #include "src/client.h"
 
-giga::Client::Client(cachepp::identifier id, const std::shared_ptr<File>& file) : id(id), file(file), is_closed(0) {
+giga::Client::Client(cachepp::identifier id, const std::shared_ptr<File>& file, std::string mode) : id(id), file(file), is_closed(0) {
 	this->l = std::shared_ptr<std::recursive_mutex> (new std::recursive_mutex);
+	this->set_mode(mode);
+}
+
+void giga::Client::set_mode(std::string mode) {
+	this->mode = 0;
+	if(mode.find('r') != std::string::npos) {
+		this->mode |= giga::Client::read_only;
+	}
+	if(mode.find('w') != std::string::npos) {
+		this->mode |= giga::Client::write_only;
+	}
+}
+
+std::string giga::Client::get_mode() {
+	std::stringstream buf;
+	if(this->mode & giga::Client::read_only) {
+		buf << 'r';
+	}
+	if(this->mode & giga::Client::write_only) {
+		buf << 'w';
+	}
+	return(buf.str());
 }
 
 cachepp::identifier giga::Client::get_identifier() {
@@ -32,14 +59,25 @@ void giga::Client::close() {
 
 std::string giga::Client::read(size_t len) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::Client::read_only)) {
+		throw(exceptionpp::InvalidOperation("giga::Client::read", "permission denied"));
+	}
+
 	if(this->file) {
 		return(this->file->r(this->shared_from_this(), len));
 	}
+
 	return("");
 }
 
 size_t giga::Client::write(std::string buffer, bool is_insert) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::Client::write_only)) {
+		throw(exceptionpp::InvalidOperation("giga::Client::write", "permission denied"));
+	}
+
 	if(this->file) {
 		if(is_insert) {
 			return(this->file->i(this->shared_from_this(), buffer));
@@ -47,14 +85,21 @@ size_t giga::Client::write(std::string buffer, bool is_insert) {
 			return(this->file->w(this->shared_from_this(), buffer));
 		}
 	}
+
 	return(0);
 }
 
 size_t giga::Client::erase(size_t len) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+
+	if(!(this->mode & giga::Client::write_only)) {
+		throw(exceptionpp::InvalidOperation("giga::Client::erase", "permission denied"));
+	}
+
 	if(this->file) {
 		return(this->file->d(this->shared_from_this(), len));
 	}
+
 	return(0);
 }
 

@@ -19,16 +19,24 @@ TEST_CASE("giga|config-probe") {
 TEST_CASE("giga|file") {
 	REQUIRE_THROWS_AS(giga::File("tests/files/nonexistent", "r"), exceptionpp::InvalidOperation);
 
-	giga::File f = giga::File("tests/files/foo", "r", giga::Config(3, 4));
-	REQUIRE(f.get_filename().compare("tests/files/foo") == 0);
-	REQUIRE(f.get_mode().compare("r") == 0);
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r", giga::Config(3, 4)));
+	REQUIRE(f->get_filename().compare("tests/files/foo") == 0);
+	REQUIRE(f->get_mode().compare("r") == 0);
 
-	REQUIRE_THROWS_AS(f.i(NULL, ""), exceptionpp::InvalidOperation);
-	REQUIRE_THROWS_AS(f.d(NULL, 10), exceptionpp::InvalidOperation);
-	REQUIRE_THROWS_AS(f.w(NULL, ""), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(f->i(NULL, ""), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(f->d(NULL, 10), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(f->w(NULL, ""), exceptionpp::InvalidOperation);
 
-	f = giga::File("tests/files/foo", "w", giga::Config(3, 4));
-	REQUIRE_THROWS_AS(f.r(NULL, 10), exceptionpp::InvalidOperation);
+	std::shared_ptr<giga::Client> c = f->open();
+	REQUIRE_NOTHROW(c->read(10));
+	REQUIRE_THROWS_AS(c->erase(10), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(c->write(""), exceptionpp::InvalidOperation);
+	c->close();
+
+	REQUIRE_THROWS_AS(f->open(c, "r"), exceptionpp::InvalidOperation);
+
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/foo", "w", giga::Config(3, 4)));
+	REQUIRE_THROWS_AS(f->r(NULL, 10), exceptionpp::InvalidOperation);
 
 	REQUIRE_NOTHROW(giga::File("tests/files/nonexistent", "+"));
 	remove("tests/files/nonexistent");
