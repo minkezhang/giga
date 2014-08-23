@@ -34,6 +34,7 @@ prep:
 
 	@echo "hello world!" > "tests/files/giga-file-read"
 	@echo "foo" > "tests/files/foo"
+	@echo "foobar" > "tests/files/giga-insert-concurrent"
 	@touch "tests/files/page-zero-size"
 	@touch "tests/files/giga-file-save"
 
