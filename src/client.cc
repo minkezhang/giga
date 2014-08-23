@@ -124,9 +124,9 @@ void giga::Client::set_is_closed(bool is_closed) {
 	if(this->get_is_closed() == is_closed) { return; }
 	if(this->file != NULL) {
 		if(is_closed) {
-			this->file->open(this->shared_from_this());
-		} else {
 			this->file->close(this->shared_from_this());
+		} else {
+			this->file->open(this->shared_from_this());
 		}
 	}
 	this->is_closed = is_closed;

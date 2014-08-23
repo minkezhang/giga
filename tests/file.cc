@@ -72,6 +72,9 @@ TEST_CASE("giga|file-read") {
 	REQUIRE(c->read(2).compare("el") == 0);
 	REQUIRE(c->read(100).compare("lo world!\n") == 0);
 	c->close();
+	c->open();
+	REQUIRE(c->read(100).compare("hello world!\n") == 0);
+	c->close();
 }
 
 TEST_CASE("giga|file-erase") {

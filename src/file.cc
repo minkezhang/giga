@@ -5,8 +5,6 @@
 #include <sstream>
 #include <string>
 
-#include <iostream>
-
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -35,7 +33,7 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 
 	this->set_mode(mode);
 
-	this->cache = std::shared_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(2));
+	this->cache = std::shared_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(100));
 
 	FILE *fp = fopen(this->get_filename().c_str(), "r");
 	if(fp == NULL) {
@@ -74,11 +72,11 @@ void giga::File::set_size(size_t size) { this->size = size; }
 
 void giga::File::align(const std::shared_ptr<giga::Client>& client) {
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
-	if((*(info->get_page())) == this->pages.front()) {
+	if(info->get_page() == this->pages.begin()) {
 		info->set_page(std::next(info->get_page(), 1));
 		info->set_page_offset(0);
 	}
-	if((*(info->get_page())) == this->pages.back()) {
+	if(info->get_page() == this->pages.end()) {
 		info->set_page(std::prev(info->get_page(), 1));
 		info->set_page_offset((*(info->get_page()))->get_size());
 	}
@@ -348,6 +346,8 @@ std::shared_ptr<giga::Client> giga::File::open(const std::shared_ptr<giga::Clien
 
 	this->clients.push_back(c);
 	this->lookaside[c->get_identifier()] = cd;
+
+	this->align(c);
 
 	return(c);
 }
