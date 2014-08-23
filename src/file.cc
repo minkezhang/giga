@@ -254,6 +254,7 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 
 		// split page
 		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, buf.size() - info->get_page_offset(), true));
+		std::cout << "  giga::File::i -- new page: " << p->get_identifier() << std::endl;
 		this->pages.insert(std::next(info->get_page(), 1), p);
 		this->cache->w(p, std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end()));
 
@@ -261,8 +262,11 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 			std::shared_ptr<giga::ClientData> tmp_info = it->second;
 			if(tmp_info->get_file_offset() > info->get_file_offset()) {
-				tmp_info->set_page(std::next(tmp_info->get_page(), 1));
-				tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
+				// different pages
+				if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
+					tmp_info->set_page(std::next(tmp_info->get_page(), 1));
+					tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
+				}
 			}
 		}
 
