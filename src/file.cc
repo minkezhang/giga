@@ -408,4 +408,12 @@ void giga::File::save() {
 	fclose(fp);
 	rename(path.str().c_str(), this->filename.c_str());
 	remove(path.str().c_str());
+
+	this->init();
+
+	// cf. http://bit.ly/1q8rpN5
+	std::map<size_t, std::list<std::shared_ptr<giga::ClientData>>> lookaside;
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		lookaside[it->second->get_file_offset()].push_back(it->second);
+	}
 }
