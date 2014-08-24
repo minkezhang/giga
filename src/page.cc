@@ -26,9 +26,7 @@ void giga::Page::set_size(size_t size) { this->size = size; }
 
 size_t giga::Page::probe(size_t offset, size_t len, bool is_forward) {
 	if(offset > this->get_size()) {
-		std::stringstream buf;
-		buf << "offset is invalid on page " << this->id << ", filename: " << this->filename << ", size: " << this->size;
-		throw(exceptionpp::InvalidOperation("giga::Page::probe", buf.str()));
+		throw(exceptionpp::InvalidOperation("giga::Page::probe", "offset is invalid"));
 	}
 	if(is_forward) {
 		return((this->get_size() - offset) > len ? len : (this->get_size() - offset));

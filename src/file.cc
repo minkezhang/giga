@@ -72,6 +72,7 @@ void giga::File::set_size(size_t size) { this->size = size; }
 
 void giga::File::align(const std::shared_ptr<giga::Client>& client) {
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+
 	if(info->get_page() == this->pages.begin()) {
 		info->set_page(std::next(info->get_page(), 1));
 		info->set_page_offset(0);
@@ -82,9 +83,30 @@ void giga::File::align(const std::shared_ptr<giga::Client>& client) {
 	}
 }
 
-size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bool is_forward) {
+size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bool is_forward, bool is_absolute) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+
+	len = (this->get_size() > len) ? len : this->get_size();
+
+	if(is_absolute) {
+		if(is_forward) {
+			if(len > info->get_file_offset()) {
+				len -= info->get_file_offset();
+			} else {
+				len = info->get_file_offset() - len;
+				is_forward = false;
+			}
+		} else {
+			if((this->get_size() - len) > info->get_file_offset()) {
+				len = (this->get_size() - len) - info->get_file_offset();
+				is_forward = true;
+			} else {
+				len = info->get_file_offset() - (this->get_size() - len);
+			}
+		}
+	}
+
 	if(len != 0) {
 		this->align(client);
 		if(is_forward) {
@@ -254,7 +276,6 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 
 		// split page
 		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, buf.size() - info->get_page_offset(), true));
-		std::cout << "  giga::File::i -- new page: " << p->get_identifier() << std::endl;
 		this->pages.insert(std::next(info->get_page(), 1), p);
 		this->cache->w(p, std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end()));
 
@@ -262,10 +283,11 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 			std::shared_ptr<giga::ClientData> tmp_info = it->second;
 			if(tmp_info->get_file_offset() > info->get_file_offset()) {
-				// different pages
+				tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
+				// adjust same page
 				if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
 					tmp_info->set_page(std::next(tmp_info->get_page(), 1));
-					tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
+					tmp_info->set_page_offset(tmp_info->get_page_offset() - info->get_page_offset());
 				}
 			}
 		}

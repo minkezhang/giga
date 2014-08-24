@@ -39,7 +39,7 @@ cachepp::identifier giga::Client::get_identifier() {
 size_t giga::Client::get_pos() {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->get_is_closed()) { throw(exceptionpp::InvalidOperation("giga::Client::get_pos", "invalid operation on a closed client")); }
-	return(this->file->s(this->shared_from_this(), 0, false));
+	return(this->file->s(this->shared_from_this(), 0, false, false));
 }
 
 bool giga::Client::get_is_closed() {
@@ -103,10 +103,10 @@ size_t giga::Client::erase(size_t len) {
 	return(0);
 }
 
-size_t giga::Client::seek(size_t len, bool is_forward) {
+size_t giga::Client::seek(size_t len, bool is_forward, bool is_absolute) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->file) {
-		return(this->file->s(this->shared_from_this(), len, is_forward));
+		return(this->file->s(this->shared_from_this(), len, is_forward, is_absolute));
 	}
 	return(0);
 }

@@ -4,8 +4,6 @@
 #include <thread>
 #include <vector>
 
-#include <iostream>
-
 #include "libs/catch/catch.hpp"
 
 #include "src/client.h"
@@ -46,9 +44,10 @@ void insert_aux(std::shared_ptr<std::atomic<uint16_t>> r, std::shared_ptr<giga::
 	size_t local_r = 0;
 	size_t n_tests = 3;
 	for(size_t i = 0; i < N_THREAD_ATTEMPTS; ++i) {
-		local_r += (c->seek(3, true) == 3);
+		size_t random_offset = rand() % 1;
+		local_r += (c->seek(3 + (3 * random_offset), true, true) == 3 + (3 * random_offset));
 		local_r += (c->write("xy", true) == 2);
-		local_r += (c->seek(5, false) == 0);
+		local_r += (c->seek(0, true, true) == 0);
 	}
 	c->close();
 
@@ -56,6 +55,16 @@ void insert_aux(std::shared_ptr<std::atomic<uint16_t>> r, std::shared_ptr<giga::
 }
 
 void erase_aux(std::shared_ptr<std::atomic<uint16_t>> r, std::shared_ptr<giga::Client> c) {
+	size_t local_r = 0;
+	size_t n_tests = 3;
+	for(size_t i = 0; i < N_THREAD_ATTEMPTS; ++i) {
+		local_r += (c->seek(3, true, true) == 3);
+		local_r += (c->erase(2) == 2);
+		local_r += (c->seek(0, true, true) == 0);
+	}
+	c->close();
+
+	*r += (local_r == n_tests * N_THREAD_ATTEMPTS);
 }
 
 void seek_aux(std::shared_ptr<std::atomic<uint16_t>> r, std::shared_ptr<giga::Client> c) {
@@ -94,7 +103,6 @@ TEST_CASE("giga|read-concurrent") {
 }
 
 TEST_CASE("giga|write-concurrent") {
-	/*
 	std::shared_ptr<std::atomic<uint16_t>> r (new std::atomic<uint16_t>(0));
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-write-concurrent", "rw+"));
 	std::shared_ptr<giga::Client> c = f->open();
@@ -122,7 +130,6 @@ TEST_CASE("giga|write-concurrent") {
 	c->close();
 
 	remove("tests/files/giga-write-concurrent");
-	*/
 }
 
 TEST_CASE("giga|insert-concurrent") {
@@ -141,20 +148,45 @@ TEST_CASE("giga|insert-concurrent") {
 	REQUIRE(*r == N_ATTEMPTS * N_THREADS);
 
 	std::shared_ptr<giga::Client> c = f->open();
-	std::string buf = c->read(6 + (2 * N_THREADS * N_ATTEMPTS));
+	std::string buf = c->read(7 + (2 * N_THREADS * N_ATTEMPTS * N_THREAD_ATTEMPTS));
 	c->close();
 
-	REQUIRE(buf.find("zz") == std::string::npos);
+	REQUIRE(buf.find("xx") == std::string::npos);
 	REQUIRE(buf.find("yy") == std::string::npos);
 	REQUIRE(buf.substr(0, 3).compare("foo") == 0);
-	std::cout << "BLOOOOOOOOOOOOH" << buf << std::endl; // .substr(buf.length() - 4) << std::endl;
-
 	REQUIRE(buf.substr(buf.length() - 4).compare("bar\n") == 0);
 
 	remove("tests/files/giga-insert-concurrent");
 }
 
 TEST_CASE("giga|erase-concurrent") {
+	std::shared_ptr<std::atomic<uint16_t>> r (new std::atomic<uint16_t>(0));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-delete-concurrent", "rw+"));
+	std::shared_ptr<giga::Client> c = f->open();
+	c->write("foo");
+	for(size_t i = 0; i < N_THREADS * N_ATTEMPTS * N_THREAD_ATTEMPTS; ++i) {
+		c->write("xy");
+	}
+	c->write("bar\n");
+	c->close();
+
+	for(size_t i = 0; i < N_ATTEMPTS; ++i) {
+		std::vector<std::thread> t;
+		for(size_t j = 0; j < N_THREADS; ++j) {
+			t.push_back(std::thread(erase_aux, r, f->open(NULL, "w")));
+		}
+		for(size_t j = 0; j < N_THREADS; ++j) {
+			t.at(j).join();
+		}
+	}
+
+	REQUIRE(*r == N_ATTEMPTS * N_THREADS);
+
+	c->open();
+	REQUIRE(c->read(100).compare("foobar\n") == 0);
+	c->close();
+
+	remove("tests/files/giga-delete-concurrent");
 }
 
 TEST_CASE("giga|seek-concurrent") {

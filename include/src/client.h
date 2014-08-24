@@ -22,7 +22,7 @@ namespace giga {
 			void close();
 			void open();
 			size_t get_pos();
-			size_t seek(size_t len, bool is_forward);
+			size_t seek(size_t len, bool is_forward, bool is_absolute = false);
 			std::string read(size_t len);
 			size_t write(std::string buffer, bool is_insert = false);
 			size_t erase(size_t len);

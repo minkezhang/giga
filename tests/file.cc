@@ -61,6 +61,15 @@ TEST_CASE("giga|file-seek") {
 	REQUIRE(c->seek(100, true) == 13);
 	REQUIRE(c->seek(100, false) == 0);
 	REQUIRE(c->seek(100, true) == 13);
+
+	// absolute seeks
+	REQUIRE(c->seek(0, true, true) == 0);
+	REQUIRE(c->seek(5, true, true) == 5);
+	REQUIRE(c->seek(1, true, true) == 1);
+	REQUIRE(c->seek(0, false, true) == 13);
+	REQUIRE(c->seek(13, false, true) == 0);
+	REQUIRE(c->seek(5, false, true) == 8);
+
 	c->close();
 }
 
@@ -173,14 +182,15 @@ TEST_CASE("giga|file-insert") {
 	std::shared_ptr<giga::Client> c_1 = f->open();
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
-	REQUIRE(c_1->seek(1, true) == 1);
+	REQUIRE(c_2->seek(1, true) == 1);
 
 	REQUIRE(f->get_size() == 13);
-	REQUIRE(c_2->write("foo", true) == 3);
+	REQUIRE(c_1->write("foo", true) == 3);
 	REQUIRE(f->get_size() == 16);
-	REQUIRE(c_1->get_pos() == 4);
-	REQUIRE(c_2->get_pos() == 3);
-	REQUIRE(c_1->read(100).compare("ello world!\n") == 0);
+	REQUIRE(c_1->get_pos() == 3);
+	REQUIRE(c_2->get_pos() == 4);
+	REQUIRE(c_2->read(100).compare("ello world!\n") == 0);
+	REQUIRE(c_1->read(100).compare("hello world!\n") == 0);
 
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_2->seek(100, false) == 0);
@@ -188,11 +198,15 @@ TEST_CASE("giga|file-insert") {
 
 	REQUIRE(c_1->write("foo", true) == 3);
 	REQUIRE(f->get_size() == 19);
+	REQUIRE(c_1->get_pos() == 4);
 	REQUIRE(c_2->get_pos() == 0);
+	REQUIRE(c_1->read(100).compare("oohello world!\n") == 0);
 	REQUIRE(c_2->read(100).compare("ffoooohello world!\n") == 0);
 
 	REQUIRE(c_2->write("addendum") == 8);
 	REQUIRE(f->get_size() == 27);
+	REQUIRE(c_1->seek(100, false) == 0);
+	REQUIRE(c_1->seek(4, true) == 4);
 	REQUIRE(c_1->read(100).compare("oohello world!\naddendum") == 0);
 
 	c_1->close();
