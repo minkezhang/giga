@@ -54,6 +54,7 @@ namespace giga {
 			size_t get_file_offset();
 			std::list<std::shared_ptr<Page>>::iterator get_page();
 			size_t get_page_offset();
+			cachepp::identifier get_identifier();
 
 		private:
 			cachepp::identifier id;

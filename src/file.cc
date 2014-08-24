@@ -409,11 +409,47 @@ void giga::File::save() {
 	rename(path.str().c_str(), this->filename.c_str());
 	remove(path.str().c_str());
 
+	// populate new pages
 	this->init();
 
-	// cf. http://bit.ly/1q8rpN5
+	/**
+	 * we are ordering the clients by file_offset -- the map iterator starts at the smallest offset and increments accordingly, giving us a natural
+	 *	way to express an efficienty comparing of file offsets to page offsets
+	 *
+	 * this is essentially to set up the final step of a merge sort
+	 *
+	 * cf. http://bit.ly/1q8rpN5
+	 */
 	std::map<size_t, std::list<std::shared_ptr<giga::ClientData>>> lookaside;
 	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
 		lookaside[it->second->get_file_offset()].push_back(it->second);
+	}
+
+	size_t file_offset = 0;
+	std::map<size_t, std::list<std::shared_ptr<giga::ClientData>>>::iterator it = lookaside.begin();
+	for(std::list<std::shared_ptr<giga::Page>>::iterator jt = this->pages.begin(); jt != this->pages.end(); ++jt) {
+		if(it == lookaside.end()) {
+			break;
+		}
+
+		file_offset += (*jt)->get_size();
+
+		// it->first contained within this page
+		if(it->first < file_offset) {
+			for(std::list<std::shared_ptr<giga::ClientData>>::iterator kt = it->second.begin(); kt != it->second.end(); ++kt) {
+				(*kt)->set_page(jt);
+				(*kt)->set_page_offset(it->first - (file_offset - (*jt)->get_size()));
+			}
+			it = std::next(it, 1);
+		}
+	}
+
+	// set EOF pointers
+	while(it != lookaside.end()) {
+		for(std::list<std::shared_ptr<giga::ClientData>>::iterator kt = it->second.begin(); kt != it->second.end(); ++kt) {
+			(*kt)->set_page(std::prev(this->pages.end(), 1));
+			(*kt)->set_page_offset(0);
+		}
+		it = std::next(it, 1);
 	}
 }

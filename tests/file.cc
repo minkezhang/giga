@@ -234,21 +234,28 @@ TEST_CASE("giga|file-write") {
 
 TEST_CASE("giga|file-save") {
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "rw", giga::Config(2, 3)));
-	std::shared_ptr<giga::Client> c = f->open();
+	std::shared_ptr<giga::Client> c_1 = f->open();
+	std::shared_ptr<giga::Client> c_2 = f->open();
+	std::shared_ptr<giga::Client> c_3 = f->open();
 
 	REQUIRE(f->get_size() == 0);
 
-	c->write("abcde");
-	c->write("foobarbaz\n");
-	c->seek(100, false);
-	c->write("prependprepend", true);
-	c->save();
-	c->close();
+	c_1->write("abcde");
+	c_1->write("foobarbaz\n");
+	c_1->seek(100, false);
+	c_1->write("prependprepend", true);
+	REQUIRE(c_2->seek(9, true) == 9);
+	REQUIRE(c_3->seek(9, true) == 9);
+	c_1->save();
 
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-save", "rw", giga::Config(2, 3)));
-	c = f->open();
 	REQUIRE(f->get_size() == 29);
-	REQUIRE(c->read(100).compare("prependprependabcdefoobarbaz\n") == 0);
-	c->save();
-	c->close();
+	REQUIRE(c_1->seek(0, true, true) == 0);
+	REQUIRE(c_1->read(100).compare("prependprependabcdefoobarbaz\n") == 0);
+	REQUIRE(c_2->read(100).compare("ependabcdefoobarbaz\n") == 0);
+	REQUIRE(c_3->read(100).compare("ependabcdefoobarbaz\n") == 0);
+	c_1->save();
+	REQUIRE(c_1->seek(10, false) == 19);
+	REQUIRE(c_1->read(10).compare("foobarbaz\n") == 0);
+	c_1->close();
+	c_2->close();
 }

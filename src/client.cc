@@ -134,6 +134,8 @@ void giga::Client::set_is_closed(bool is_closed) {
 
 giga::ClientData::ClientData(cachepp::identifier id) : id(id) {}
 
+cachepp::identifier giga::ClientData::get_identifier() { return(this->id); }
+
 void giga::ClientData::set_file_offset(size_t file_offset) { this->file_offset = file_offset; }
 void giga::ClientData::set_page(std::list<std::shared_ptr<giga::Page>>::iterator page) { this->page = page; }
 void giga::ClientData::set_page_offset(size_t page_offset) { this->page_offset = page_offset; }
