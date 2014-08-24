@@ -52,29 +52,31 @@ std::string giga::Page::get_filename() {
 void giga::Page::set_file_offset(size_t file_offset) { this->file_offset = file_offset; }
 
 void giga::Page::aux_load() {
-	this->data.clear();
 	// deallocate the data vector
+	this->data.clear();
 	std::vector<uint8_t>().swap(this->data);
 
+	if(this->get_size() == 0) {
+		return;
+	}
+
+	std::vector<uint8_t> buf(this->get_size(), 0);
+
+	// load data into the page
 	if(!this->get_is_dirty()) {
-		// load data into the page
 		FILE *fp = fopen(this->get_filename().c_str(), "r");
 		if(fseek(fp, this->file_offset, SEEK_SET) == -1) {
+			fclose(fp);
 			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fseek"));
 		}
 
-		// data buffer is NOT null-terminated -- note that we could have made it so, by setting size to this->size + 1
-		// because data buffer is not null-terminated, we must manually pass in the size of the buffer to this->data.assign()
-		char *data = (char *) calloc(this->get_size(), sizeof(char));
-
-		if(fread((void *) data, sizeof(char), this->get_size(), fp) < this->get_size()) {
+		if(fread(buf.data(), sizeof(char), this->get_size(), fp) < this->get_size()) {
+			fclose(fp);
 			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
 		}
 		fclose(fp);
 
-		this->data.insert(this->data.end(), data, data + this->get_size());
-
-		free((void *) data);
+		this->data.insert(this->data.end(), buf.begin(), buf.end());
 	}
 }
 

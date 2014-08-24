@@ -30,7 +30,7 @@ EXECUTABLE=giga.app
 all: $(SOURCES) $(EXECUTABLE)
 
 $(EXECUTABLE): $(OBJECTS)
-	$(CC) $(CFLAGS) $(INCLUDE_LIBS) $(INCLUDE) $(OBJECTS) -o $@ $(LIBS)
+	@$(CC) $(CFLAGS) $(INCLUDE_LIBS) $(INCLUDE) $(OBJECTS) -o $@ $(LIBS)
 
 # prep test files
 prep:
@@ -47,7 +47,11 @@ prep:
 test: clean $(EXECUTABLE) prep
 	@# set ulimit -c unlimited to get a core dump and analyze via gdb
 	@#	cf. http://bit.ly/1zlOj8u, http://bit.ly/1n2ONGD, http://bit.ly/1n2ONGD, http://bit.ly/VCQ0yM
-	ulimit -c unlimited && time ./$(EXECUTABLE) | tee results.log
+	@ulimit -c unlimited && time ./$(EXECUTABLE) | tee results.log
+
+memcheck: clean $(EXECUTABLE) prep
+	@# cf. http://bit.ly/1t4tJIx
+	@ulimit -c unlimited && valgrind --leak-check=full --show-leak-kinds=all ./$(EXECUTABLE) 2>&1 | tee memcheck.log
 
 clean:
 	@rm -f $(EXECUTABLE) *.o *.log core
