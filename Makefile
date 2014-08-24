@@ -4,7 +4,9 @@ CC=g++
 #	-Wl,--no-as-need -- cf. http://bit.ly/ToQTcC
 #	-fstack-protector-all -- cf. http://bit.ly/1vXj2nU
 CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic -fstack-protector-all
-ifdef $(CONCURRENT)
+
+CONCURRENT=false
+ifeq ($(CONCURRENT), true)
 	CFLAGS+=-D _GIGA_CONCURRENT_TESTS
 endif
 

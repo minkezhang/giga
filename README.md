@@ -26,7 +26,7 @@ Installation
 git clone https://github.com/cripplet/giga.git
 cd giga
 git submodule update --init --recursive
-make test
+make CONCURRENT=false test
 ```
 
 Updating
