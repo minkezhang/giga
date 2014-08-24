@@ -20,9 +20,10 @@ namespace giga {
 
 	class Config {
 		public:
-			Config(size_t i_page_size, size_t m_page_size);
+			Config(size_t i_page_size, size_t m_page_size, size_t cache_size);
 			size_t get_i_page_size();
 			size_t get_m_page_size();
+			size_t get_cache_size();
 
 			/**
 			 * get maximum number of bytes able to be written (starting at offset) to the page before reaching max size
@@ -33,11 +34,12 @@ namespace giga {
 		private:
 			size_t i_page_size;
 			size_t m_page_size;
+			size_t cache_size;
 	};
 
 	class File : public std::enable_shared_from_this<File> {
 		public:
-			File(std::string filename, std::string mode, Config config = Config(1024, 1024));
+			File(std::string filename, std::string mode, Config config = Config(1024, 1024, 100));
 			~File();
 
 			/**

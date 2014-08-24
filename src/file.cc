@@ -12,10 +12,11 @@
 #include "src/file.h"
 #include "src/page.h"
 
-giga::Config::Config(size_t i_page_size, size_t m_page_size) : i_page_size(i_page_size), m_page_size(m_page_size) {}
+giga::Config::Config(size_t i_page_size, size_t m_page_size, size_t cache_size) : i_page_size(i_page_size), m_page_size(m_page_size), cache_size(cache_size) {}
 
 size_t giga::Config::get_i_page_size() { return(this->i_page_size); }
 size_t giga::Config::get_m_page_size() { return(this->m_page_size); }
+size_t giga::Config::get_cache_size() { return(this->cache_size); }
 
 size_t giga::Config::probe(const std::shared_ptr<giga::Page>& page, size_t offset, size_t len) {
 	size_t n_bytes = page->probe(offset, len, true);
@@ -63,7 +64,7 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 
 	this->set_mode(mode);
 
-	this->cache = std::unique_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(100));
+	this->cache = std::unique_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(this->config.get_cache_size()));
 	this->init();
 }
 

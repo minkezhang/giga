@@ -4,7 +4,7 @@
 #include "src/file.h"
 
 TEST_CASE("giga|config-probe") {
-	giga::Config c = giga::Config(100, 200);
+	giga::Config c = giga::Config(100, 200, 2);
 	std::shared_ptr<giga::Page> p (new giga::Page(1, "", 0, 100, false));
 	REQUIRE(c.probe(p, 0, 1000) == 200);
 	REQUIRE(c.probe(p, 0, 10) == 10);
@@ -19,7 +19,7 @@ TEST_CASE("giga|config-probe") {
 TEST_CASE("giga|file") {
 	REQUIRE_THROWS_AS(giga::File("tests/files/nonexistent", "r"), exceptionpp::InvalidOperation);
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r", giga::Config(3, 4)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r", giga::Config(3, 4, 2)));
 	REQUIRE(f->get_filename().compare("tests/files/foo") == 0);
 	REQUIRE(f->get_mode().compare("r") == 0);
 
@@ -35,7 +35,7 @@ TEST_CASE("giga|file") {
 
 	REQUIRE_THROWS_AS(f->open(c, "r"), exceptionpp::InvalidOperation);
 
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/foo", "w", giga::Config(3, 4)));
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/foo", "w", giga::Config(3, 4, 2)));
 	REQUIRE_THROWS_AS(f->r(NULL, 10), exceptionpp::InvalidOperation);
 
 	REQUIRE_NOTHROW(giga::File("tests/files/nonexistent", "+"));
@@ -50,7 +50,7 @@ TEST_CASE("giga|file-open") {
 }
 
 TEST_CASE("giga|file-seek") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 2)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 2, 2)));
 	std::shared_ptr<giga::Client> c = f->open();
 	REQUIRE(f->get_size() == 13);
 	REQUIRE(c->seek(2, true) == 2);
@@ -74,7 +74,7 @@ TEST_CASE("giga|file-seek") {
 }
 
 TEST_CASE("giga|file-read") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 2)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 2, 2)));
 	std::shared_ptr<giga::Client> c = f->open();
 	REQUIRE(c->read(0).compare("") == 0);
 	REQUIRE(c->read(1).compare("h") == 0);
@@ -87,7 +87,7 @@ TEST_CASE("giga|file-read") {
 }
 
 TEST_CASE("giga|file-erase") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5, 2)));
 	std::shared_ptr<giga::Client> c_1 = f->open();
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
@@ -122,7 +122,7 @@ TEST_CASE("giga|file-erase") {
 	c_2->close();
 
 	f.reset();
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5)));
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5, 2)));
 	c_1 = f->open();
 	c_2 = f->open();
 
@@ -162,7 +162,7 @@ TEST_CASE("giga|file-erase") {
 	c_2->close();
 
 	f.reset();
-	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5)));
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 5, 2)));
 	c_1 = f->open();
 	c_2 = f->open();
 
@@ -178,7 +178,7 @@ TEST_CASE("giga|file-erase") {
 }
 
 TEST_CASE("giga|file-insert") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 3)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 3, 2)));
 	std::shared_ptr<giga::Client> c_1 = f->open();
 	std::shared_ptr<giga::Client> c_2 = f->open();
 
@@ -214,7 +214,7 @@ TEST_CASE("giga|file-insert") {
 }
 
 TEST_CASE("giga|file-write") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 3)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-read", "rw", giga::Config(2, 3, 2)));
 	std::shared_ptr<giga::Client> c = f->open();
 
 	REQUIRE(c->write("") == 0);
@@ -233,7 +233,7 @@ TEST_CASE("giga|file-write") {
 }
 
 TEST_CASE("giga|file-save") {
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "rw", giga::Config(2, 3)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-file-save", "rw", giga::Config(2, 3, 2)));
 	std::shared_ptr<giga::Client> c_1 = f->open();
 	std::shared_ptr<giga::Client> c_2 = f->open();
 	std::shared_ptr<giga::Client> c_3 = f->open();
