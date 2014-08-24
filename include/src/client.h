@@ -35,9 +35,9 @@ namespace giga {
 
 		private:
 			cachepp::identifier id;
-			std::shared_ptr<File> file;
+			std::weak_ptr<File> file;
 			bool is_closed;
-			std::shared_ptr<std::recursive_mutex> l;
+			std::unique_ptr<std::recursive_mutex> l;
 			uint8_t mode;
 
 			void set_is_closed(bool is_closed);

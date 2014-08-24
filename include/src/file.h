@@ -97,10 +97,10 @@ namespace giga {
 			std::list<std::shared_ptr<Client>> clients;
 			std::map<cachepp::identifier, std::shared_ptr<ClientData>> lookaside;
 
-			std::shared_ptr<cachepp::SimpleSerialCache<Page>> cache;
+			std::unique_ptr<cachepp::SimpleSerialCache<Page>> cache;
 
 			// because I'm stupid and can't figure out fine-grained locking on doubly-linked lists
-			std::shared_ptr<std::recursive_mutex> l;
+			std::unique_ptr<std::recursive_mutex> l;
 
 			void init();
 			void align(const std::shared_ptr<Client>& client);

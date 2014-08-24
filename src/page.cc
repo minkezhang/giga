@@ -67,16 +67,19 @@ void giga::Page::aux_load() {
 		FILE *fp = fopen(this->get_filename().c_str(), "r");
 		if(fseek(fp, this->file_offset, SEEK_SET) == -1) {
 			fclose(fp);
+			fp = NULL;
 			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fseek"));
 		}
 
 		if(fread(buf.data(), sizeof(char), this->get_size(), fp) < this->get_size()) {
 			fclose(fp);
+			fp = NULL;
 			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
 		}
 		fclose(fp);
+		fp = NULL;
 
-		this->data.insert(this->data.end(), buf.begin(), buf.end());
+		buf.swap(this->data);
 	}
 }
 
@@ -86,6 +89,7 @@ void giga::Page::aux_unload() {
 	FILE *fp = fopen(this->get_filename().c_str(), "w");
 	fputs(std::string(this->data.begin(), this->data.end()).c_str(), fp);
 	fclose(fp);
+	fp = NULL;
 
 	this->data.clear();
 	std::vector<uint8_t>().swap(this->data);

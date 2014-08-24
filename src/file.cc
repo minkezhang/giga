@@ -30,6 +30,7 @@ size_t giga::Config::probe(const std::shared_ptr<giga::Page>& page, size_t offse
 
 void giga::File::init() {
 	this->cache->clear();
+
 	this->pages.clear();
 
 	FILE *fp = fopen(this->get_filename().c_str(), "r");
@@ -44,6 +45,7 @@ void giga::File::init() {
 	fseek(fp, 0, SEEK_END);
 	this->set_size(ftell(fp));
 	fclose(fp);
+	fp = NULL;
 
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
 	if(this->get_size() == 0) {
@@ -57,11 +59,11 @@ void giga::File::init() {
 }
 
 giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), size(0), c_count(0), p_count(0), config(config) {
-	this->l = std::shared_ptr<std::recursive_mutex> (new std::recursive_mutex);
+	this->l = std::unique_ptr<std::recursive_mutex> (new std::recursive_mutex);
 
 	this->set_mode(mode);
 
-	this->cache = std::shared_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(100));
+	this->cache = std::unique_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(100));
 	this->init();
 }
 
@@ -406,6 +408,8 @@ void giga::File::save() {
 		fputs(std::string(buf.begin(), buf.end()).c_str(), fp);
 	}
 	fclose(fp);
+	fp = NULL;
+
 	rename(path.str().c_str(), this->filename.c_str());
 	remove(path.str().c_str());
 
