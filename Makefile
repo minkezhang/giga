@@ -5,9 +5,14 @@ CC=g++
 #	-fstack-protector-all -- cf. http://bit.ly/1vXj2nU
 CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic -fstack-protector-all
 
+#custom flags
 CONCURRENT=false
+PERFORMANCE=false
 ifeq ($(CONCURRENT), true)
 	CFLAGS+=-D _GIGA_CONCURRENT_TESTS
+endif
+ifeq ($(PERFORMANCE), true)
+	CFLAGS+=-D _GIGA_PERFORMANCE_TESTS
 endif
 
 INCLUDE=-Iinclude/
