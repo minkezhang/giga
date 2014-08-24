@@ -1,3 +1,5 @@
+#ifdef _GIGA_CONCURRENT_TESTS
+
 #include <atomic>
 #include <memory>
 #include <random>
@@ -211,3 +213,5 @@ TEST_CASE("giga|seek-concurrent") {
 	REQUIRE(*r == N_ATTEMPTS * N_THREADS);
 	remove("tests/files/giga-seek-concurrent");
 }
+
+#endif
