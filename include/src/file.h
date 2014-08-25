@@ -85,6 +85,8 @@ namespace giga {
 			const static uint8_t write_only = 2;
 			const static uint8_t dne_create = 4;
 
+			void load();
+
 		private:
 			std::string filename;
 			uint8_t mode;
@@ -106,7 +108,6 @@ namespace giga {
 			// because I'm stupid and can't figure out fine-grained locking on doubly-linked lists
 			std::unique_ptr<std::recursive_mutex> l;
 
-			void init();
 			void align(const std::shared_ptr<Client>& client);
 			void set_size(size_t size);
 			void set_mode(std::string mode);

@@ -118,6 +118,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 
 	for(size_t attempt = 0; attempt < n_attempts; ++attempt) {
 		threads.clear();
+		f->load();
 		for(size_t i = 0; i < n_clients; ++i) {
 			threads.push_back(std::thread(&giga::Performance::aux_run, this, runtime, data, f->open(), access_pattern, type, data_size));
 		}
