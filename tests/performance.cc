@@ -23,7 +23,7 @@ TEST_CASE("giga|performance") {
 
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::W}), std::vector<size_t>({100}), 1, 100), exceptionpp::InvalidOperation);
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/nonexistent", "rw+"));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/nonexistent", "rw+", giga::Config(1024, 2048, 100)));
 
 	p->set_file(f);
 
@@ -47,16 +47,24 @@ TEST_CASE("giga|performance") {
 	auto type_i = std::vector<uint8_t>(100, giga::Performance::I);
 	auto type_e = std::vector<uint8_t>(100, giga::Performance::E);
 	auto size = std::vector<size_t>(100, 1024);
+
 	for(size_t i = 0; i < 100; ++i) {
 		auto buf = std::vector<uint8_t> (1024, 0xff);
 		c->write(std::string(buf.begin(), buf.end()));
 		access_pattern_a.push_back(i * 1024);
 	}
+	REQUIRE(f->get_size() == 100 * 1024);
 
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("R", access_pattern_a, type_r, size, n_clients + 1, 100));
+	}
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("W", access_pattern_a, type_w, size, n_clients + 1, 100));
+	}
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("I", access_pattern_a, type_i, size, n_clients + 1, 100));
+	}
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("E", access_pattern_b, type_e, size, n_clients + 1, 100));
 	}
 

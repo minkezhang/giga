@@ -48,7 +48,6 @@ giga::File::~File() {
 
 void giga::File::load() {
 	this->cache->clear();
-
 	this->pages.clear();
 
 	FILE *fp = fopen(this->get_filename().c_str(), "r");
