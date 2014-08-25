@@ -130,10 +130,12 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 	std::vector<std::thread> threads;
 	std::shared_ptr<std::atomic<double>> runtime (new std::atomic<double> (0));
 	std::shared_ptr<std::atomic<size_t>> data (new std::atomic<size_t> (0));
+	size_t f_size;
 
 	for(size_t attempt = 0; attempt < n_attempts; ++attempt) {
 		threads.clear();
 		f->load();
+		f_size = f->get_size();
 		for(size_t i = 0; i < n_clients; ++i) {
 			threads.push_back(std::thread(&giga::Performance::aux_run, this, runtime, data, f->open(), access_pattern, type, data_size));
 		}
@@ -142,7 +144,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 		}
 	}
 
-	this->result.push_back(tag, access_pattern.size() * n_attempts, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f->get_size(), f->get_config().get_cache_size(), f->get_config().get_i_page_size(), n_clients);
+	this->result.push_back(tag, access_pattern.size() * n_attempts, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {
