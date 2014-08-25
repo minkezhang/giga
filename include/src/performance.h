@@ -1,6 +1,10 @@
 #ifndef _GIGA_PERFORMANCE_H
 #define _GIGA_PERFORMANCE_H
 
+#include <atomic>
+#include <memory>
+
+#include "src/client.h"
 #include "src/file.h"
 
 namespace giga {
@@ -39,11 +43,21 @@ namespace giga {
 		public:
 			Performance();
 
-			// void runtest(
-			// void aux_runtest
+			void set_file(std::shared_ptr<giga::File> file);
+
+			void run(std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients);
+			Result get_result();
+
+			const static uint8_t R = 0;
+			const static uint8_t W = 1;
+			const static uint8_t I = 2;
+			const static uint8_t E = 3;
 
 		private:
-			std::shared_ptr<File> file;
+			std::weak_ptr<File> file;
+			Result result;
+
+			void aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size);
 	};
 }
 

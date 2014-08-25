@@ -3,7 +3,10 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <thread>
 #include <vector>
+
+#include <iostream>
 
 #include "libs/exceptionpp/exception.h"
 
@@ -87,3 +90,47 @@ std::ostream& operator<< (std::ostream& os, giga::Result& obj) {
 	return(os);
 }
 
+giga::Performance::Performance() : result(giga::Result()) {}
+void giga::Performance::set_file(std::shared_ptr<giga::File> file) { this->file = file; }
+giga::Result giga::Performance::get_result() { return(this->result); }
+
+void giga::Performance::run(std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients) {
+	auto f = this->file.lock();
+	if(f == NULL) {
+		throw(exceptionpp::InvalidOperation("giga::Performance::run", "file not set"));
+	}
+	if(n_clients == 0) {
+		throw(exceptionpp::InvalidOperation("giga::Performance::run", "n_clients must be non-zero"));
+	}
+	if((access_pattern.size() != type.size()) || (type.size() != data_size.size())) {
+		throw(exceptionpp::InvalidOperation("giga::Performance::run", "invalid vector sizes"));
+	}
+
+	std::vector<std::thread> threads;
+	std::shared_ptr<std::atomic<double>> runtime (new std::atomic<double> (0));
+	for(size_t i = 0; i < n_clients; ++i) {
+		threads.push_back(std::thread(&giga::Performance::aux_run, this, runtime, f->open(), access_pattern, type, data_size));
+	}
+	for(size_t i = 0; i < n_clients; ++i) {
+		threads.at(i).join();
+	}
+	// this->result.push_back(...);
+}
+
+void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {
+	for(size_t i = 0; i < access_pattern.size(); ++i) {
+		std::cout << "  giga::Performance::aux_run -- index " << i << std::endl;
+		switch(type.at(i)) {
+			case giga::Performance::R:
+				break;
+			case giga::Performance::W:
+				break;
+			case giga::Performance::I:
+				break;
+			case giga::Performance::E:
+				break;
+			default:
+				throw(exceptionpp::InvalidOperation("giga::Performance::aux_run", "invalid type parameter"));
+		}
+	}
+}
