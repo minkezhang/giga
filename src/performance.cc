@@ -1,12 +1,11 @@
 #include <algorithm>
+#include <ctime>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <string>
 #include <thread>
 #include <vector>
-
-#include <iostream>
 
 #include "libs/exceptionpp/exception.h"
 
@@ -93,13 +92,16 @@ giga::Performance::Performance() : result(giga::Result()) {}
 void giga::Performance::set_file(std::shared_ptr<giga::File> file) { this->file = file; }
 giga::Result giga::Performance::get_result() { return(this->result); }
 
-void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients) {
+void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients, size_t n_attempts) {
 	auto f = this->file.lock();
 	if(f == NULL) {
 		throw(exceptionpp::InvalidOperation("giga::Performance::run", "file not set"));
 	}
 	if(n_clients == 0) {
 		throw(exceptionpp::InvalidOperation("giga::Performance::run", "n_clients must be non-zero"));
+	}
+	if(n_attempts == 0) {
+		throw(exceptionpp::InvalidOperation("giga::Performance::run", "n_attempts must be non-zero"));
 	}
 	if((access_pattern.size() != type.size()) || (type.size() != data_size.size())) {
 		throw(exceptionpp::InvalidOperation("giga::Performance::run", "invalid vector sizes"));
@@ -114,28 +116,59 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 	std::shared_ptr<std::atomic<double>> runtime (new std::atomic<double> (0));
 	std::shared_ptr<std::atomic<size_t>> data (new std::atomic<size_t> (0));
 
-	for(size_t i = 0; i < n_clients; ++i) {
-		threads.push_back(std::thread(&giga::Performance::aux_run, this, runtime, data, f->open(), access_pattern, type, data_size));
-	}
-	for(size_t i = 0; i < n_clients; ++i) {
-		threads.at(i).join();
+	for(size_t attempt = 0; attempt < n_attempts; ++attempt) {
+		threads.clear();
+		for(size_t i = 0; i < n_clients; ++i) {
+			threads.push_back(std::thread(&giga::Performance::aux_run, this, runtime, data, f->open(), access_pattern, type, data_size));
+		}
+		for(size_t i = 0; i < n_clients; ++i) {
+			threads.at(i).join();
+		}
 	}
 
-	this->result.push_back(tag, access_pattern.size(), *runtime, *data, f->get_size(), f->get_config().get_cache_size(), f->get_config().get_i_page_size(), n_clients);
+	this->result.push_back(tag, access_pattern.size() * n_attempts, *runtime, *data, f->get_size(), f->get_config().get_cache_size(), f->get_config().get_i_page_size(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {
+	size_t local_data = 0;
+	double local_runtime = 0;
 	for(size_t i = 0; i < access_pattern.size(); ++i) {
+		client->seek(access_pattern.at(i), true, true);
+		std::clock_t start;
+		std::vector<uint8_t> buf;
 		switch(type.at(i)) {
 			case giga::Performance::R:
+				start = std::clock();
+				client->read(data_size.at(i));
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
 				break;
 			case giga::Performance::W:
+				buf = std::vector<uint8_t> (data_size.at(i), 0xff);
+				start = std::clock();
+				client->write(std::string(buf.begin(), buf.end()));
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
 				break;
 			case giga::Performance::I:
+				buf = std::vector<uint8_t> (data_size.at(i), 0xff);
+				start = std::clock();
+				client->write(std::string(buf.begin(), buf.end()), true);
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
 				break;
 			case giga::Performance::E:
+				start = std::clock();
+				client->erase(data_size.at(i));
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
 				break;
 		}
-		*data += data_size.at(i);
+		local_data += data_size.at(i);
 	}
+	client->close();
+
+	*data += local_data;
+
+	double expected = runtime->load();
+	double desired;
+	do {
+		desired = expected + local_runtime;
+	} while(!runtime->compare_exchange_weak(expected, desired));
 }

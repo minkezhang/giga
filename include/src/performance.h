@@ -44,7 +44,7 @@ namespace giga {
 
 			void set_file(std::shared_ptr<giga::File> file);
 
-			void run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients);
+			void run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients, size_t n_attempts);
 			Result get_result();
 
 			const static uint8_t R = 0;
