@@ -1,4 +1,5 @@
 #include <memory>
+#include <random>
 
 #include <iostream>
 
@@ -38,8 +39,8 @@ TEST_CASE("giga|performance") {
 
 	#ifdef _GIGA_PERFORMANCE_TESTS
 
-	size_t pattern_size = 1;
-	size_t n_attempts = 1;
+	size_t pattern_size = 100;
+	size_t n_attempts = 100;
 
 	// performance testing
 	auto c = f->open();
@@ -54,7 +55,7 @@ TEST_CASE("giga|performance") {
 	for(size_t i = 0; i < pattern_size; ++i) {
 		auto buf = std::vector<uint8_t> (1024, 0xff);
 		c->write(std::string(buf.begin(), buf.end()));
-		access_pattern_a.push_back(i * 1024);
+		access_pattern_a.push_back(i * 1024 + (rand() % 1024));
 	}
 	c->save();
 	REQUIRE(f->get_size() == pattern_size * 1024);
