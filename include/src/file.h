@@ -79,6 +79,8 @@ namespace giga {
 
 			size_t get_size();
 
+			Config get_config();
+
 			const static uint8_t read_only = 1;
 			const static uint8_t write_only = 2;
 			const static uint8_t dne_create = 4;

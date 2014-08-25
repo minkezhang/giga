@@ -29,6 +29,23 @@ size_t giga::Config::probe(const std::shared_ptr<giga::Page>& page, size_t offse
 	return(len);
 }
 
+giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), size(0), c_count(0), p_count(0), config(config) {
+	this->l = std::unique_ptr<std::recursive_mutex> (new std::recursive_mutex);
+
+	this->set_mode(mode);
+
+	this->cache = std::unique_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(this->config.get_cache_size()));
+	this->init();
+}
+
+giga::File::~File() {
+	std::lock_guard<std::recursive_mutex> l(*this->l);
+	for(std::list<std::shared_ptr<Client>>::iterator it = this->clients.begin(); it != this->clients.end(); ++it) {
+		(*it)->close();
+		(*it).reset();
+	}
+}
+
 void giga::File::init() {
 	this->cache->clear();
 
@@ -59,22 +76,7 @@ void giga::File::init() {
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
 }
 
-giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), size(0), c_count(0), p_count(0), config(config) {
-	this->l = std::unique_ptr<std::recursive_mutex> (new std::recursive_mutex);
-
-	this->set_mode(mode);
-
-	this->cache = std::unique_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(this->config.get_cache_size()));
-	this->init();
-}
-
-giga::File::~File() {
-	std::lock_guard<std::recursive_mutex> l(*this->l);
-	for(std::list<std::shared_ptr<Client>>::iterator it = this->clients.begin(); it != this->clients.end(); ++it) {
-		(*it)->close();
-		(*it).reset();
-	}
-}
+giga::Config giga::File::get_config() { return(this->config); }
 
 size_t giga::File::get_size() { return(this->size); }
 void giga::File::set_size(size_t size) { this->size = size; }
