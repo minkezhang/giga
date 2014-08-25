@@ -39,8 +39,9 @@ $(EXECUTABLE): $(OBJECTS)
 
 # prep test files
 prep:
-	@rm "tests/files/giga-file-save"
-	@rm "tests/files/page-zero-size"
+	@rm -f "tests/files/giga-file-save"
+	@rm -f "tests/files/page-zero-size"
+	@rm -f "tests/files/nonexistent"
 
 	@echo "hello world!" > "tests/files/giga-file-read"
 	@echo "foo" > "tests/files/foo"
