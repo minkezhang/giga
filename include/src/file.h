@@ -86,6 +86,7 @@ namespace giga {
 			const static uint8_t dne_create = 4;
 
 			void load();
+			double get_miss_rate();
 
 		private:
 			std::string filename;

@@ -15,7 +15,7 @@ bool giga::Result::is_dup(char l, char r) { return(((l == ' ') || (l == '\n')) &
 
 giga::Result::Result() : size(0) {}
 
-void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, size_t n_clients) {
+void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, double miss_rate, size_t n_clients) {
 	this->tag.push_back(tag);
 	this->n_transactions.push_back(n_transactions);
 	this->total_runtime.push_back(total_runtime);
@@ -27,6 +27,7 @@ void giga::Result::push_back(std::string tag, size_t n_transactions, double tota
 	this->file_size.push_back(file_size);
 	this->cache_size.push_back(cache_size);
 	this->page_size.push_back(page_size);
+	this->miss_rate.push_back(miss_rate);
 	this->n_clients.push_back(n_clients);
 	this->size++;
 }
@@ -44,6 +45,7 @@ size_t giga::Result::get_n_clients(size_t index) { return(this->n_clients.at(ind
 double giga::Result::get_read(size_t index) { return((this->read.at(index) / this->n_transactions.at(index)) * 100); }
 double giga::Result::get_write(size_t index) { return((this->write.at(index) / this->n_transactions.at(index)) * 100); }
 double giga::Result::get_insert(size_t index) { return((this->insert.at(index) / this->n_transactions.at(index)) * 100); }
+double giga::Result::get_miss_rate(size_t index) { return(this->miss_rate.at(index) * 100); }
 double giga::Result::get_erase(size_t index) { return((this->erase.at(index) / this->n_transactions.at(index)) * 100); }
 
 std::string giga::Result::to_string(bool is_tsv) {
@@ -56,11 +58,11 @@ std::string giga::Result::to_string(bool is_tsv) {
 	}
 
 	std::stringstream buffer;
-	buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(percent_pad) << "R (%)" << sep << std::setw(percent_pad) << "W (%)" << sep << std::setw(percent_pad) << "I (%)" << sep << std::setw(percent_pad) << "E (%)" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (us)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << std::endl;
+	buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(percent_pad) << "R (%)" << sep << std::setw(percent_pad) << "W (%)" << sep << std::setw(percent_pad) << "I (%)" << sep << std::setw(percent_pad) << "E (%)" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (us)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << sep << std::setw(pad) << "miss (%)" << std::endl;
 	buffer << std::string(buffer.str().length(), '=') << std::endl;
 	for(size_t index = 0; index < this->get_size(); ++index) {
 		buffer << std::setprecision(2) << std::fixed;
-		buffer << std::setw(pad) << index + 1 << sep << std::setw(3) << this->get_tag(index) << sep << std::setw(percent_pad) << this->get_read(index) << sep << std::setw(percent_pad) << this->get_write(index) << sep << std::setw(percent_pad) << this->get_insert(index) << sep << std::setw(percent_pad) << this->get_erase(index) << sep << std::setw(pad) << this->get_throughput(index) << sep << std::setw(pad) << this->get_latency(index) << sep << std::setw(pad) << this->get_file_size(index) << sep << std::setw(pad) << this->get_data_size(index) << sep << std::setw(pad) << this->get_cache_size(index) << sep << std::setw(pad) << this->get_page_size(index) << sep << std::setw(pad) << this->get_n_clients(index) << std::endl;
+		buffer << std::setw(pad) << index + 1 << sep << std::setw(3) << this->get_tag(index) << sep << std::setw(percent_pad) << this->get_read(index) << sep << std::setw(percent_pad) << this->get_write(index) << sep << std::setw(percent_pad) << this->get_insert(index) << sep << std::setw(percent_pad) << this->get_erase(index) << sep << std::setw(pad) << this->get_throughput(index) << sep << std::setw(pad) << this->get_latency(index) << sep << std::setw(pad) << this->get_file_size(index) << sep << std::setw(pad) << this->get_data_size(index) << sep << std::setw(pad) << this->get_cache_size(index) << sep << std::setw(pad) << this->get_page_size(index) << sep << std::setw(pad) << this->get_n_clients(index) << sep << std::setw(pad) << this->get_miss_rate(index) << std::endl;
 	}
 
 	std::string ret = buffer.str();
@@ -144,7 +146,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 		}
 	}
 
-	this->result.push_back(tag, access_pattern.size() * n_attempts, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), n_clients);
+	this->result.push_back(tag, access_pattern.size() * n_attempts, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_miss_rate(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {

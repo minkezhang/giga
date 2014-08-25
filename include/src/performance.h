@@ -11,7 +11,7 @@ namespace giga {
 	class Result {
 		public:
 			Result();
-			void push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, size_t n_clients);
+			void push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, double miss_rate, size_t n_clients);
 
 			size_t get_size();
 
@@ -27,6 +27,7 @@ namespace giga {
 			double get_write(size_t index);
 			double get_insert(size_t index);
 			double get_erase(size_t index);
+			double get_miss_rate(size_t index);
 
 			std::string to_string(bool is_tsv = false);
 			static bool is_dup(char l, char r);
@@ -44,6 +45,7 @@ namespace giga {
 			std::vector<size_t> write;
 			std::vector<size_t> insert;
 			std::vector<size_t> erase;
+			std::vector<double> miss_rate;
 	};
 
 	class Performance {

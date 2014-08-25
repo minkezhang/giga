@@ -46,8 +46,10 @@ giga::File::~File() {
 	}
 }
 
+double giga::File::get_miss_rate() { return(this->cache->get_miss_rate()); }
+
 void giga::File::load() {
-	this->cache->clear();
+	this->cache->reset();
 	this->pages.clear();
 
 	FILE *fp = fopen(this->get_filename().c_str(), "r");
