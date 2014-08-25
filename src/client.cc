@@ -39,8 +39,13 @@ cachepp::identifier giga::Client::get_identifier() {
 size_t giga::Client::get_pos() {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
 	if(this->get_is_closed()) { throw(exceptionpp::InvalidOperation("giga::Client::get_pos", "invalid operation on a closed client")); }
+
 	auto f = this->file.lock();
-	return(f->s(this->shared_from_this(), 0, false, false));
+	if(f != NULL) {
+		return(f->s(this->shared_from_this(), 0, false, false));
+	}
+
+	return(0);
 }
 
 bool giga::Client::get_is_closed() {

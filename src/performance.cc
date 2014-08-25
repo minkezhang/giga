@@ -16,13 +16,12 @@ bool giga::Result::is_dup(char l, char r) { return(((l == ' ') || (l == '\n')) &
 
 giga::Result::Result() : size(0) {}
 
-void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t file_size, double data_size, size_t cache_size, size_t page_size, size_t n_clients) {
+void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t file_size, size_t cache_size, size_t page_size, size_t n_clients) {
 	this->tag.push_back(tag);
 	this->n_transactions.push_back(n_transactions);
 	this->total_runtime.push_back(total_runtime);
 	this->total_data.push_back(total_data);
 	this->file_size.push_back(file_size);
-	this->data_size.push_back(data_size);
 	this->cache_size.push_back(cache_size);
 	this->page_size.push_back(page_size);
 	this->n_clients.push_back(n_clients);
@@ -35,7 +34,7 @@ std::string giga::Result::get_tag(size_t index) { return(this->tag.at(index)); }
 double giga::Result::get_latency(size_t index) { return(this->total_runtime.at(index) / this->n_transactions.at(index)); }
 double giga::Result::get_throughput(size_t index) { return(this->total_data.at(index) / this->total_runtime.at(index)); }
 size_t giga::Result::get_file_size(size_t index) { return(this->file_size.at(index)); }
-double giga::Result::get_data_size(size_t index) { return(this->data_size.at(index)); }
+double giga::Result::get_data_size(size_t index) { return(this->total_data.at(index) / this->n_transactions.at(index)); }
 size_t giga::Result::get_cache_size(size_t index) { return(this->cache_size.at(index)); }
 size_t giga::Result::get_page_size(size_t index) { return(this->page_size.at(index)); }
 size_t giga::Result::get_n_clients(size_t index) { return(this->n_clients.at(index)); }
@@ -94,7 +93,7 @@ giga::Performance::Performance() : result(giga::Result()) {}
 void giga::Performance::set_file(std::shared_ptr<giga::File> file) { this->file = file; }
 giga::Result giga::Performance::get_result() { return(this->result); }
 
-void giga::Performance::run(std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients) {
+void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients) {
 	auto f = this->file.lock();
 	if(f == NULL) {
 		throw(exceptionpp::InvalidOperation("giga::Performance::run", "file not set"));
@@ -105,21 +104,28 @@ void giga::Performance::run(std::vector<size_t> access_pattern, std::vector<uint
 	if((access_pattern.size() != type.size()) || (type.size() != data_size.size())) {
 		throw(exceptionpp::InvalidOperation("giga::Performance::run", "invalid vector sizes"));
 	}
+	for(size_t i = 0; i < type.size(); ++i) {
+		if(type.at(i) > giga::Performance::E) {
+			throw(exceptionpp::InvalidOperation("giga::Performance::aux", "invalid type parameter"));
+		}
+	}
 
 	std::vector<std::thread> threads;
 	std::shared_ptr<std::atomic<double>> runtime (new std::atomic<double> (0));
+	std::shared_ptr<std::atomic<size_t>> data (new std::atomic<size_t> (0));
+
 	for(size_t i = 0; i < n_clients; ++i) {
 		threads.push_back(std::thread(&giga::Performance::aux_run, this, runtime, f->open(), access_pattern, type, data_size));
 	}
 	for(size_t i = 0; i < n_clients; ++i) {
 		threads.at(i).join();
 	}
-	// this->result.push_back(...);
+
+	// this->result.push_back(tag, this->access_pattern.size(), *runtime, *data, f->get_size(), f->get_config().get_cache_size(), f->get_config().get_page_size(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {
 	for(size_t i = 0; i < access_pattern.size(); ++i) {
-		std::cout << "  giga::Performance::aux_run -- index " << i << std::endl;
 		switch(type.at(i)) {
 			case giga::Performance::R:
 				break;
@@ -129,8 +135,6 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 				break;
 			case giga::Performance::E:
 				break;
-			default:
-				throw(exceptionpp::InvalidOperation("giga::Performance::aux_run", "invalid type parameter"));
 		}
 	}
 }

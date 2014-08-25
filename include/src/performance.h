@@ -11,7 +11,7 @@ namespace giga {
 	class Result {
 		public:
 			Result();
-			void push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t file_size, double data_size, size_t cache_size, size_t page_size, size_t n_clients);
+			void push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t file_size, size_t cache_size, size_t page_size, size_t n_clients);
 
 			size_t get_size();
 
@@ -33,7 +33,6 @@ namespace giga {
 			std::vector<double> total_runtime;
 			std::vector<size_t> total_data;
 			std::vector<size_t> file_size;
-			std::vector<double> data_size;
 			std::vector<size_t> cache_size;
 			std::vector<size_t> page_size;
 			std::vector<size_t> n_clients;
@@ -45,7 +44,7 @@ namespace giga {
 
 			void set_file(std::shared_ptr<giga::File> file);
 
-			void run(std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients);
+			void run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients);
 			Result get_result();
 
 			const static uint8_t R = 0;
