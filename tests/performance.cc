@@ -1,3 +1,4 @@
+#include <ctime>
 #include <memory>
 #include <random>
 
@@ -35,6 +36,8 @@ TEST_CASE("giga|performance") {
 	REQUIRE_THROWS_AS(p->run("ERRR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::R}), std::vector<size_t>({0}), 1, 100), exceptionpp::InvalidOperation);
 
 	#ifdef _GIGA_PERFORMANCE_TESTS
+
+	srand(time(NULL));
 
 	size_t pattern_size = 100;
 	size_t n_attempts = 100;
