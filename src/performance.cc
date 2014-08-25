@@ -146,7 +146,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 		}
 	}
 
-	this->result.push_back(tag, access_pattern.size() * n_attempts, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_miss_rate(), n_clients);
+	this->result.push_back(tag, access_pattern.size() * n_attempts * n_clients, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_miss_rate(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {
