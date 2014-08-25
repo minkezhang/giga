@@ -56,7 +56,7 @@ namespace giga {
 			std::weak_ptr<File> file;
 			Result result;
 
-			void aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size);
+			void aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size);
 	};
 }
 
