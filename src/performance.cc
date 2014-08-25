@@ -126,7 +126,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 		if(type.at(i) > giga::Performance::E) {
 			throw(exceptionpp::InvalidOperation("giga::Performance::aux", "invalid type parameter"));
 		}
-		type_tracker.at(type.at(i)) += n_attempts;
+		type_tracker.at(type.at(i)) += n_attempts * n_clients;
 	}
 
 	std::vector<std::thread> threads;
