@@ -47,7 +47,7 @@ std::string giga::Result::to_string(bool is_tsv) {
 	}
 
 	std::stringstream buffer;
-	buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (B)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << std::endl;
+	buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (us)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << std::endl;
 	buffer << std::string(buffer.str().length(), '=') << std::endl;
 	for(size_t index = 0; index < this->get_size(); ++index) {
 		buffer << std::setprecision(2) << std::fixed;
