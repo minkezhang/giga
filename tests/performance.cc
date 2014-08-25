@@ -15,7 +15,7 @@ TEST_CASE("giga|performance-result") {
 
 	REQUIRE_THROWS_AS(r.to_string(), exceptionpp::InvalidOperation);
 
-	REQUIRE_NOTHROW(r.push_back("EGR", 1000, 1000, 1000, 1000, 1000, 10, 4));
+	REQUIRE_NOTHROW(r.push_back("EGR", 1000, 1000, 1000, 1, 1, 1, 97, 1000, 1000, 10, 4));
 	REQUIRE_NOTHROW(r.to_string());
 }
 
@@ -33,6 +33,7 @@ TEST_CASE("giga|performance") {
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1, 2}), std::vector<uint8_t>({giga::Performance::R, giga::Performance::W}), std::vector<size_t>({1, 1}), 1, 0), exceptionpp::InvalidOperation);
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1, 2}), std::vector<uint8_t>({giga::Performance::R, giga::Performance::W}), std::vector<size_t>({1}), 1, 100), exceptionpp::InvalidOperation);
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({100}), std::vector<size_t>({0}), 1, 100), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(p->run("ERRR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::R}), std::vector<size_t>({0}), 1, 100), exceptionpp::InvalidOperation);
 
 	REQUIRE_NOTHROW(p->run("EXG", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::R}), std::vector<size_t>({0}), 1, 100));
 	std::cout << p->get_result().to_string();
