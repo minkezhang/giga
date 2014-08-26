@@ -1,6 +1,8 @@
 #ifndef _GIGA_FILE_H
 #define _GIGA_FILE_H
 
+#define PAGE_SIZE 4096
+
 #include <list>
 #include <map>
 #include <memory>
@@ -39,7 +41,7 @@ namespace giga {
 
 	class File : public std::enable_shared_from_this<File> {
 		public:
-			File(std::string filename, std::string mode, Config config = Config(1024, 1024, 100));
+			File(std::string filename, std::string mode, Config config = Config(PAGE_SIZE, PAGE_SIZE * 2, 100));
 			~File();
 
 			/**
