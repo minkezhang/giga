@@ -31,6 +31,7 @@ namespace giga {
 			// file offset from the filename
 			size_t file_offset;
 			size_t size;
+			size_t r;
 
 			/**
 			 * attribute setters

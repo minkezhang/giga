@@ -1,7 +1,9 @@
 #include <cstdio>
+#include <ctime>
 #include <iterator>
 #include <memory>
 #include <mutex>
+#include <random>
 #include <sstream>
 #include <string>
 
@@ -30,6 +32,9 @@ size_t giga::Config::probe(const std::shared_ptr<giga::Page>& page, size_t offse
 }
 
 giga::File::File(std::string filename, std::string mode, giga::Config config) : filename(filename), size(0), c_count(0), p_count(0), config(config) {
+	// populating pages
+	srand(time(NULL));
+
 	this->l = std::unique_ptr<std::recursive_mutex> (new std::recursive_mutex);
 
 	this->set_mode(mode);

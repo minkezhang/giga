@@ -1,3 +1,4 @@
+#include <random>
 #include <sstream>
 #include <string>
 #include <vector>
@@ -13,6 +14,7 @@ giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offse
 	this->set_filename(this->filename);
 	this->data.clear();
 	this->set_checksum(this->hash());
+	this->r = rand();
 }
 giga::Page::~Page() {
 	// remove tmp file to lessen bloat
@@ -42,7 +44,7 @@ std::string giga::Page::get_filename() {
 		std::stringstream path;
 		std::stringstream buf;
 		buf << this->cached << "_" << this->get_identifier();
-		path << "/tmp/" << md5(buf.str());
+		path << "/tmp/giga_" << md5(buf.str()) << this->r;
 		return(path.str());
 	} else {
 		return(this->cached);
