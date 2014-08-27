@@ -109,6 +109,7 @@ Todo
 * tutorial
 * implement a **better caching backend** (will **NOT** break `giga` interface)
 * more code documentation
+* compare performance to the [Worthmuller](http://ubm.io/VRpd1m) report
 
 Contact
 ----
