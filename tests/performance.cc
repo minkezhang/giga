@@ -52,6 +52,7 @@ TEST_CASE("giga|performance") {
 	auto type_e = std::vector<uint8_t>(pattern_size, giga::Performance::E);
 	auto size = std::vector<size_t>(pattern_size, 1024);
 
+	std::cout << "FOR SIZE_T I = 0" << std::endl;
 	for(size_t i = 0; i < pattern_size; ++i) {
 		auto buf = std::vector<uint8_t> (1024, 0xff);
 		c->write(std::string(buf.begin(), buf.end()));

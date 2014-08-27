@@ -1,11 +1,14 @@
 #include <cstdio>
 #include <ctime>
+#include <cerrno>
+#include <cstring>
 #include <iterator>
 #include <memory>
 #include <mutex>
 #include <random>
 #include <sstream>
 #include <string>
+#include <sys/stat.h>
 
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
@@ -40,6 +43,17 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 	this->set_mode(mode);
 
 	this->cache = std::unique_ptr<cachepp::SimpleSerialCache<giga::Page>> (new cachepp::SimpleSerialCache<giga::Page>(this->config.get_cache_size()));
+
+	// make the /tmp/giga folder if it does not exist
+	if(mkdir("/tmp/giga/", S_IRWXU | S_IRWXU | S_IRWXO) == -1) {
+		int e = errno;
+		if(e == EEXIST) {
+			std::stringstream buf;
+			buf << "cannot initialize working directory (errno returned " << e << " ['" << strerror(e) << "'])";
+			throw(exceptionpp::RuntimeError("giga::File::File", buf.str()));
+		}
+	}
+
 	this->load();
 }
 
@@ -327,8 +341,9 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+	bool is_back = (*(info->get_page())) == this->pages.back();
 	// special case -- extend the page list with another tail node (current tail node is now expired)
-	if((*(info->get_page())) == this->pages.back()) {
+	if(is_back) {
 		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, this->config.get_i_page_size(), true));
 		this->pages.insert(this->pages.end(), p);
 	}
@@ -397,6 +412,10 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		this->set_size(this->get_size() + n_bytes);
 	}
 	std::vector<uint8_t> b = this->cache->r((*(info->get_page())));
+	if(is_back) {
+		info->set_page(std::prev(this->pages.end(), 1));
+		info->set_page_offset(0);
+	}
 	return(val.length() - len);
 }
 

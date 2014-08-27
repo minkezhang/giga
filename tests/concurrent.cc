@@ -1,5 +1,7 @@
 #ifdef _GIGA_CONCURRENT_TESTS
 
+#include <iostream>
+
 #include <atomic>
 #include <memory>
 #include <random>
@@ -29,6 +31,7 @@ void read_aux(std::shared_ptr<std::atomic<uint16_t>> r, std::shared_ptr<giga::Cl
 		local_r += (c->seek(pos + 3, false) == 0);
 	}
 	c->close();
+	std::cout << "  local_r: " << local_r << std::endl;
 	*r += (local_r == n_tests * N_THREAD_ATTEMPTS);
 }
 

@@ -44,7 +44,7 @@ std::string giga::Page::get_filename() {
 		std::stringstream path;
 		std::stringstream buf;
 		buf << this->cached << "_" << this->get_identifier();
-		path << "/tmp/giga_" << md5(buf.str()) << this->r;
+		path << "/tmp/giga/" << md5(buf.str()) << this->r;
 		return(path.str());
 	} else {
 		return(this->cached);
@@ -67,6 +67,11 @@ void giga::Page::aux_load() {
 	// load data into the page
 	if(!this->get_is_dirty()) {
 		FILE *fp = fopen(this->get_filename().c_str(), "r");
+		if(fp == NULL) {
+			std::stringstream buf;
+			buf << "cannot open working file '" << this->get_filename() << "'";
+			throw(exceptionpp::RuntimeError("giga::Page::aux_load", buf.str()));
+		}
 		if(fseek(fp, this->file_offset, SEEK_SET) == -1) {
 			fclose(fp);
 			fp = NULL;
@@ -89,6 +94,12 @@ void giga::Page::aux_unload() {
 	this->set_size(this->data.size());
 
 	FILE *fp = fopen(this->get_filename().c_str(), "w");
+	if(fp == NULL) {
+		std::stringstream buf;
+		buf << "cannot open working file '" << this->get_filename() << "'";
+		throw(exceptionpp::RuntimeError("giga::Page::aux_unload", buf.str()));
+	}
+
 	fputs(std::string(this->data.begin(), this->data.end()).c_str(), fp);
 	fclose(fp);
 	fp = NULL;
