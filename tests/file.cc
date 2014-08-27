@@ -230,6 +230,14 @@ TEST_CASE("giga|file-write") {
 	REQUIRE(c->read(100).compare("abcde|world!\nEXTRAEXTRA") == 0);
 
 	c->close();
+
+	f = std::shared_ptr<giga::File> (new giga::File("tests/files/nonexistent", "rw+"));
+	c = f->open();
+	REQUIRE(c->write("foo") == 3);
+	REQUIRE(c->seek(0, true, true) == 0);
+	REQUIRE(c->erase(3) == 3);
+	REQUIRE(c->get_pos() == 0);
+	c->close();
 }
 
 TEST_CASE("giga|file-save") {
