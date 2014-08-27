@@ -47,7 +47,7 @@ giga::File::File(std::string filename, std::string mode, giga::Config config) : 
 	// make the /tmp/giga folder if it does not exist
 	if(mkdir("/tmp/giga/", S_IRWXU | S_IRWXU | S_IRWXO) == -1) {
 		int e = errno;
-		if(e == EEXIST) {
+		if(e != EEXIST) {
 			std::stringstream buf;
 			buf << "cannot initialize working directory (errno returned " << e << " ['" << strerror(e) << "'])";
 			throw(exceptionpp::RuntimeError("giga::File::File", buf.str()));
@@ -341,10 +341,11 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+
 	bool is_back = (*(info->get_page())) == this->pages.back();
 	// special case -- extend the page list with another tail node (current tail node is now expired)
 	if(is_back) {
-		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, this->config.get_i_page_size(), true));
+		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, 0, true));
 		this->pages.insert(this->pages.end(), p);
 	}
 
@@ -352,10 +353,12 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 
 	while(len > 0) {
 		size_t n_bytes = this->config.probe((*(info->get_page())), info->get_page_offset(), len);
+
 		// special case -- handle the 0-sized expired tail node
 		if(info->get_page_offset() == (*(info->get_page()))->get_size()) {
 			n_bytes = this->config.get_i_page_size() > len ? len : this->config.get_i_page_size();
 		}
+
 		std::vector<uint8_t> buf = this->cache->r((*(info->get_page())));
 
 		if(n_bytes + (*(info->get_page()))->get_size() > this->config.get_m_page_size()) {
