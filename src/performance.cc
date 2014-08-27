@@ -95,6 +95,23 @@ std::string giga::Result::pop_front(bool is_tsv, bool include_header) {
 
 		ret = ret.substr(1);
 	}
+
+	this->index.pop_front();
+	this->tag.pop_front();
+	this->n_transactions.pop_front();
+	this->total_runtime.pop_front();
+	this->total_data.pop_front();
+	this->read.pop_front();
+	this->write.pop_front();
+	this->insert.pop_front();
+	this->erase.pop_front();
+	this->file_size.pop_front();
+	this->cache_size.pop_front();
+	this->page_size.pop_front();
+	this->miss_rate.pop_front();
+	this->n_clients.pop_front();
+	this->size--;
+
 	return(ret);
 }
 
@@ -117,9 +134,9 @@ std::ostream& operator<< (std::ostream& os, giga::Result& obj) {
 	return(os);
 }
 
-giga::Performance::Performance() : result(giga::Result()) {}
+giga::Performance::Performance() : result(std::shared_ptr<giga::Result> (new giga::Result())) {}
 void giga::Performance::set_file(std::shared_ptr<giga::File> file) { this->file = file; }
-giga::Result giga::Performance::get_result() { return(this->result); }
+std::shared_ptr<giga::Result> giga::Performance::get_result() { return(this->result); }
 
 void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients, size_t n_attempts) {
 	auto f = this->file.lock();
@@ -164,7 +181,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 		}
 	}
 
-	this->result.push_back(tag, access_pattern.size() * n_attempts * n_clients, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_miss_rate(), n_clients);
+	this->result->push_back(tag, access_pattern.size() * n_attempts * n_clients, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_miss_rate(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {

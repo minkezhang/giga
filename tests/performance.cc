@@ -16,7 +16,9 @@ TEST_CASE("giga|performance-result") {
 	REQUIRE_THROWS_AS(r.to_string(), exceptionpp::InvalidOperation);
 
 	REQUIRE_NOTHROW(r.push_back("EGR", 1000, 1000, 1000, 1, 1, 1, 97, 1000, 1000, 10, .94, 4));
-	REQUIRE_NOTHROW(r.to_string());
+	REQUIRE_NOTHROW(r.pop_front(true, true));
+
+	REQUIRE_THROWS_AS(r.to_string(), exceptionpp::InvalidOperation);
 }
 
 
@@ -63,19 +65,19 @@ TEST_CASE("giga|performance") {
 
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("R", access_pattern_a, type_r, size, n_clients + 1, n_attempts));
-		std::cout << p->get_result().pop_front(false, n_clients == 0) << std::flush;
+		std::cout << p->get_result()->pop_front(false, n_clients == 0) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("W", access_pattern_a, type_w, size, n_clients + 1, n_attempts));
-		std::cout << p->get_result().pop_front(false, false) << std::flush;
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("I", access_pattern_a, type_i, size, n_clients + 1, n_attempts));
-		std::cout << p->get_result().pop_front(false, false) << std::flush;
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("E", access_pattern_b, type_e, size, n_clients + 1, n_attempts));
-		std::cout << p->get_result().pop_front(false, false) << std::flush;
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
 
 	#endif
