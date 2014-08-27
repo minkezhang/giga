@@ -12,6 +12,8 @@
 
 #include "src/performance.h"
 
+#define USEC 1000000
+
 bool giga::Result::is_dup(char l, char r) { return(((l == ' ') || (l == '\n')) && (l == r)); }
 
 giga::Result::Result() : size(0), i_count(0) {}
@@ -192,31 +194,32 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 	size_t local_data = 0;
 	double local_runtime = 0;
 	for(size_t i = 0; i < access_pattern.size(); ++i) {
+		std::clock_t start = std::clock();
 		client->seek(access_pattern.at(i), true, true);
-		std::clock_t start;
+		local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 		std::vector<uint8_t> buf;
 		switch(type.at(i)) {
 			case giga::Performance::R:
 				start = std::clock();
 				client->read(data_size.at(i));
-				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 				break;
 			case giga::Performance::W:
 				buf = std::vector<uint8_t> (data_size.at(i), 0xff);
 				start = std::clock();
 				client->write(std::string(buf.begin(), buf.end()));
-				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 				break;
 			case giga::Performance::I:
 				buf = std::vector<uint8_t> (data_size.at(i), 0xff);
 				start = std::clock();
 				client->write(std::string(buf.begin(), buf.end()), true);
-				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 				break;
 			case giga::Performance::E:
 				start = std::clock();
 				client->erase(data_size.at(i));
-				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / 1000000);
+				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 				break;
 		}
 		local_data += data_size.at(i);
