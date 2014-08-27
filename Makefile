@@ -30,7 +30,7 @@ OBJECTS=$(SOURCES:.cc=.o)
 
 EXECUTABLE=giga.app
 
-.PHONY: all test clean prep
+.PHONY: all test clean prep memcheck
 
 all: $(SOURCES) $(EXECUTABLE)
 
