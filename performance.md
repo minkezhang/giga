@@ -7,7 +7,7 @@ make PERFORMANCE=true test
 Testing was done on a 7200rpm SATA drive. Native read speed returned from `sudo hdparm -tT /dev/sda` of this drive is `120 MB/s`.
 
 * `R`|`W`|`I`|`E` -- the percentage of read / write / insert / erase calls being made
-* `file` -- the file size
+* `file` -- the **initial** file size -- final file size may be vastly different in the case of insert and delete calls
 * `data` -- the average amount of data being processed per transaction
 * `cache` -- the number of pages kept in memory
 * `init` -- initial page size
