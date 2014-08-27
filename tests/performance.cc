@@ -27,7 +27,7 @@ TEST_CASE("giga|performance") {
 
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::W}), std::vector<size_t>({100}), 1, 100), exceptionpp::InvalidOperation);
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(16 * 1024, 24 * 1024, 100)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(16 * 1024, 24 * 1024, 10)));
 
 	p->set_file(f);
 
