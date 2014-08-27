@@ -86,10 +86,7 @@ void giga::File::load() {
 	fp = NULL;
 
 	this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, this->filename, 0, 0)));
-	if(this->get_size() == 0) {
-		this->pages.push_back(std::shared_ptr<giga::Page> (new giga::Page(this->p_count++, "", 0, 0, true)));
-	}
-	for(size_t i = 0; i < this->get_size(); i += this->config.get_i_page_size()) {
+	for(size_t i = 0; i <= this->get_size(); i += this->config.get_i_page_size()) {
 		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, this->filename, i, (this->get_size() - i) > this->config.get_i_page_size() ? this->config.get_i_page_size() : (this->get_size() - i)));
 		this->pages.push_back(p);
 	}
@@ -128,13 +125,24 @@ void giga::File::load() {
 		}
 	}
 
-	// set EOF pointers
-	while(it != lookaside.end()) {
-		for(std::list<std::shared_ptr<giga::ClientData>>::iterator kt = it->second.begin(); kt != it->second.end(); ++kt) {
-			(*kt)->set_page(std::prev(this->pages.end(), 1));
-			(*kt)->set_page_offset(0);
+	if(this->get_size() > 0) {
+		// set EOF pointers
+		while(it != lookaside.end()) {
+			for(std::list<std::shared_ptr<giga::ClientData>>::iterator kt = it->second.begin(); kt != it->second.end(); ++kt) {
+				(*kt)->set_page(std::prev(this->pages.end(), 1));
+				(*kt)->set_page_offset(0);
+			}
+			it = std::next(it, 1);
 		}
-		it = std::next(it, 1);
+	} else {
+		// set to beginning of file if the file is empty
+		while(it != lookaside.end()) {
+			for(std::list<std::shared_ptr<giga::ClientData>>::iterator kt = it->second.begin(); kt != it->second.end(); ++kt) {
+				(*kt)->set_page(std::next(this->pages.begin(), 1));
+				(*kt)->set_page_offset(0);
+			}
+			it = std::next(it, 1);
+		}
 	}
 }
 
@@ -255,6 +263,11 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 	size_t len = val.length();
 	while(len > 0 && (*(info->get_page())) != this->pages.back()) {
 		size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, true);
+
+		if(n_bytes == 0) {
+			break;
+		}
+
 		std::vector<uint8_t> buf = this->cache->r((*(info->get_page())));
 
 		// copy into the buffer
@@ -393,6 +406,7 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		} else {
 			// insert to present page
 			buf.insert(buf.begin() + info->get_page_offset(), val.begin() + (val.length() - len), val.begin() + (val.length() - len) + n_bytes);
+
 			this->cache->w((*(info->get_page())), buf);
 			(*(info->get_page()))->set_size((*(info->get_page()))->get_size() + n_bytes);
 
