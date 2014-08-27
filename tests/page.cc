@@ -1,3 +1,6 @@
+#include <cstring>
+#include <sys/stat.h>
+
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 

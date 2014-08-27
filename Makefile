@@ -44,6 +44,7 @@ prep:
 	@rm -f "tests/files/nonexistent"
 	@rm -f "tests/files/giga-performance"
 
+	@mkdir "/tmp/giga/"
 	@echo "hello world!" > "tests/files/giga-file-read"
 	@echo "foo" > "tests/files/foo"
 	@echo "foobar" > "tests/files/giga-insert-concurrent"

@@ -51,12 +51,13 @@ TEST_CASE("giga|performance") {
 	auto type_w = std::vector<uint8_t>(pattern_size, giga::Performance::W);
 	auto type_i = std::vector<uint8_t>(pattern_size, giga::Performance::I);
 	auto type_e = std::vector<uint8_t>(pattern_size, giga::Performance::E);
-	auto size = std::vector<size_t>(pattern_size, rand() % 1024);
+	auto size = std::vector<size_t>();
 
+	auto buf = std::vector<uint8_t> (1024, 0xff);
 	for(size_t i = 0; i < pattern_size; ++i) {
-		auto buf = std::vector<uint8_t> (1024, 0xff);
 		c->write(std::string(buf.begin(), buf.end()));
 		access_pattern.push_back(i * 1024 + (rand() % 1024));
+		size.push_back(rand() % 1024);
 	}
 	c->save();
 	REQUIRE(f->get_size() == pattern_size * 1024);

@@ -41,7 +41,7 @@ std::string giga::Result::get_tag(size_t index) { return(this->tag.at(index)); }
 double giga::Result::get_latency(size_t index) { return(this->total_runtime.at(index) / this->n_transactions.at(index)); }
 double giga::Result::get_throughput(size_t index) { return(this->total_data.at(index) / this->total_runtime.at(index)); }
 size_t giga::Result::get_file_size(size_t index) { return(this->file_size.at(index)); }
-double giga::Result::get_data_size(size_t index) { return(this->total_data.at(index) / this->n_transactions.at(index)); }
+double giga::Result::get_data_size(size_t index) { return((double) this->total_data.at(index) / this->n_transactions.at(index)); }
 size_t giga::Result::get_cache_size(size_t index) { return(this->cache_size.at(index)); }
 size_t giga::Result::get_init_size(size_t index) { return(this->init_size.at(index)); }
 size_t giga::Result::get_max_size(size_t index) { return(this->max_size.at(index)); }
