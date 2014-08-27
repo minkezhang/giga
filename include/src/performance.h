@@ -2,6 +2,7 @@
 #define _GIGA_PERFORMANCE_H
 
 #include <atomic>
+#include <deque>
 #include <memory>
 
 #include "src/client.h"
@@ -37,20 +38,20 @@ namespace giga {
 			size_t size;
 			size_t i_count;
 
-			std::vector<std::string> tag;
-			std::vector<size_t> index;
-			std::vector<size_t> n_transactions;
-			std::vector<double> total_runtime;
-			std::vector<size_t> total_data;
-			std::vector<size_t> file_size;
-			std::vector<size_t> cache_size;
-			std::vector<size_t> page_size;
-			std::vector<size_t> n_clients;
-			std::vector<size_t> read;
-			std::vector<size_t> write;
-			std::vector<size_t> insert;
-			std::vector<size_t> erase;
-			std::vector<double> miss_rate;
+			std::deque<std::string> tag;
+			std::deque<size_t> index;
+			std::deque<size_t> n_transactions;
+			std::deque<double> total_runtime;
+			std::deque<size_t> total_data;
+			std::deque<size_t> file_size;
+			std::deque<size_t> cache_size;
+			std::deque<size_t> page_size;
+			std::deque<size_t> n_clients;
+			std::deque<size_t> read;
+			std::deque<size_t> write;
+			std::deque<size_t> insert;
+			std::deque<size_t> erase;
+			std::deque<double> miss_rate;
 	};
 
 	class Performance {

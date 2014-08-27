@@ -1,4 +1,5 @@
 #include <algorithm>
+#include <deque>
 #include <ctime>
 #include <iomanip>
 #include <ostream>
@@ -94,7 +95,6 @@ std::string giga::Result::pop_front(bool is_tsv, bool include_header) {
 
 		ret = ret.substr(1);
 	}
-	this->remove(0);
 	return(ret);
 }
 
