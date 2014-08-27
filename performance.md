@@ -4,7 +4,21 @@ This is the result as reported by the performance test suite when executing:
 make PERFORMANCE=true test
 ```
 
-Testing was done on a 7200rpm SATA drive. Native read speed returned from `sudo hdparm -tT /dev/sda` of this drive is 120MB/s.
+Testing was done on a 7200rpm SATA drive. Native read speed returned from `sudo hdparm -tT /dev/sda` of this drive is `120 MB/s`.
+
+* `R`|`W`|`I`|`E` -- the percentage of read / write / insert / erase calls being made
+* `file` -- the file size
+* `data` -- the average amount of data being processed per transaction
+* `cache` -- the number of pages kept in memory
+* `init` -- initial page size
+* `max` -- max page size before the data is split into two virtual pages
+* `N` -- the number of clients writing to the file concurrently
+
+Note that we are writing an average of about half a kilobyte into the file -- this is representing **incremental** changes to a file -- as we increase the average data, 
+as well as the characteristic page size of the cache, we will be able to increase the throughput dramatically.
+
+As performance needs may vary, the cache can be configured as an optional input into the `File` constructor -- cf. `include/src/file.h` to see the defaults and for how 
+to invoke the optional `Config` argument.
 
 ```
       trial | tag |  R (%) |  W (%) |  I (%) |  E (%) | tput (B/us) |    lat (us) |    file (B) |    data (B) |       cache |    init (B) |     max (B) |   N |    miss (%)
