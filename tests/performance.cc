@@ -27,7 +27,12 @@ TEST_CASE("giga|performance") {
 
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::W}), std::vector<size_t>({100}), 1, 100), exceptionpp::InvalidOperation);
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(16 * 1024, 24 * 1024, 10)));
+	size_t pattern_size = 1000;
+	size_t n_attempts = 100;
+	size_t file_size_metric = 16 * 1024;
+	size_t edit_size_metric = 1024;
+
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * edit_size_metric, 3 * edit_size_metric, 10)));
 
 	p->set_file(f);
 
@@ -41,43 +46,61 @@ TEST_CASE("giga|performance") {
 
 	srand(time(NULL));
 
-	size_t pattern_size = 1000;
-	size_t n_attempts = 100;
-
 	// performance testing
 	auto c = f->open();
-	auto access_pattern = std::vector<size_t>();
+	auto access_pattern_seq = std::vector<size_t>();
+	auto access_pattern_ran = std::vector<size_t>();
 	auto type_r = std::vector<uint8_t>(pattern_size, giga::Performance::R);
 	auto type_w = std::vector<uint8_t>(pattern_size, giga::Performance::W);
 	auto type_i = std::vector<uint8_t>(pattern_size, giga::Performance::I);
 	auto type_e = std::vector<uint8_t>(pattern_size, giga::Performance::E);
 	auto size = std::vector<size_t>();
 
-	auto buf = std::vector<uint8_t> (1024, 0xff);
+	auto buf = std::vector<uint8_t> (file_size_metric, 0xff);
 	for(size_t i = 0; i < pattern_size; ++i) {
 		c->write(std::string(buf.begin(), buf.end()));
-		access_pattern.push_back(i * 1024 + (rand() % 1024));
-		size.push_back(rand() % 1024);
+		access_pattern_seq.push_back(i * file_size_metric + (rand() % 1024));
+		access_pattern_ran.push_back(rand() % pattern_size * file_size_metric);
+		size.push_back(rand() % edit_size_metric);
 	}
 	c->save();
-	REQUIRE(f->get_size() == pattern_size * 1024);
+	REQUIRE(f->get_size() == pattern_size * file_size_metric);
 
 	c->close();
 
+	// sequential sequence writes
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
-		REQUIRE_NOTHROW(p->run("R", access_pattern, type_r, size, n_clients + 1, n_attempts));
+		REQUIRE_NOTHROW(p->run("Rsq", access_pattern_seq, type_r, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, n_clients == 0) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
-		REQUIRE_NOTHROW(p->run("W", access_pattern, type_w, size, n_clients + 1, n_attempts));
+		REQUIRE_NOTHROW(p->run("Wsq", access_pattern_seq, type_w, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
-		REQUIRE_NOTHROW(p->run("I", access_pattern, type_i, size, n_clients + 1, n_attempts));
+		REQUIRE_NOTHROW(p->run("Isq", access_pattern_seq, type_i, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
-		REQUIRE_NOTHROW(p->run("E", access_pattern, type_e, size, n_clients + 1, n_attempts));
+		REQUIRE_NOTHROW(p->run("Esq", access_pattern_seq, type_e, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
+	}
+
+	// random sequence writes
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
+		REQUIRE_NOTHROW(p->run("Rrn", access_pattern_ran, type_r, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
+	}
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
+		REQUIRE_NOTHROW(p->run("Wrn", access_pattern_ran, type_w, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
+	}
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
+		REQUIRE_NOTHROW(p->run("Irn", access_pattern_ran, type_i, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result()->pop_front(false, false) << std::flush;
+	}
+	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
+		REQUIRE_NOTHROW(p->run("Ern", access_pattern_ran, type_e, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
 
