@@ -16,8 +16,8 @@ int main() {
 	c->seek(0, true, true);
 	std::cout << c->read(100) << std::endl;
 
-	c->seek(0, true, true);
-	std::cout << c->get_pos() << ", " << c->erase(5) << std::endl;
+	c->seek(0, true, true):
+	c->erase(5);
 
 	c->seek(0, true, true);
 	c->write("Goodbye, cruel", true);
