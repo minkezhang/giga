@@ -21,4 +21,9 @@ TEST_CASE("giga|compatibility") {
 		INFO("WARNING: vector does not manually resize capacity");
 		CHECK(v.capacity() == 0);
 	}
+
+	{
+		INFO("WARNING: RAND_MAX is below recommended size");
+		CHECK(RAND_MAX >= 2147483647);
+	}
 }
