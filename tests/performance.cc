@@ -29,10 +29,11 @@ TEST_CASE("giga|performance") {
 
 	size_t pattern_size = 1000;
 	size_t n_attempts = 100;
-	size_t file_size_metric = 16 * 1024;
+	size_t file_size_metric = 1 * 1024;
+	size_t page_size_metric = file_size_metric;
 	size_t edit_size_metric = 1024;
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * edit_size_metric, 3 * edit_size_metric, 10)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size_metric, 3 * page_size_metric, 100)));
 
 	p->set_file(f);
 
@@ -59,10 +60,11 @@ TEST_CASE("giga|performance") {
 	auto buf = std::vector<uint8_t> (file_size_metric, 0xff);
 	for(size_t i = 0; i < pattern_size; ++i) {
 		c->write(std::string(buf.begin(), buf.end()));
-		access_pattern_seq.push_back(i * file_size_metric + (rand() % 1024));
+		access_pattern_seq.push_back(i * file_size_metric + (rand() % page_size_metric));
 		access_pattern_ran.push_back(rand() % pattern_size * file_size_metric);
 		size.push_back(rand() % edit_size_metric);
 	}
+	// write to disk
 	c->save();
 	REQUIRE(f->get_size() == pattern_size * file_size_metric);
 
