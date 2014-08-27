@@ -16,7 +16,7 @@ bool giga::Result::is_dup(char l, char r) { return(((l == ' ') || (l == '\n')) &
 
 giga::Result::Result() : size(0), i_count(0) {}
 
-void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, double miss_rate, size_t n_clients) {
+void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t init_size, size_t max_size, double miss_rate, size_t n_clients) {
 	this->index.push_back(i_count++);
 	this->tag.push_back(tag);
 	this->n_transactions.push_back(n_transactions);
@@ -28,7 +28,8 @@ void giga::Result::push_back(std::string tag, size_t n_transactions, double tota
 	this->erase.push_back(erase);
 	this->file_size.push_back(file_size);
 	this->cache_size.push_back(cache_size);
-	this->page_size.push_back(page_size);
+	this->init_size.push_back(init_size);
+	this->max_size.push_back(max_size);
 	this->miss_rate.push_back(miss_rate);
 	this->n_clients.push_back(n_clients);
 	this->size++;
@@ -42,7 +43,8 @@ double giga::Result::get_throughput(size_t index) { return(this->total_data.at(i
 size_t giga::Result::get_file_size(size_t index) { return(this->file_size.at(index)); }
 double giga::Result::get_data_size(size_t index) { return(this->total_data.at(index) / this->n_transactions.at(index)); }
 size_t giga::Result::get_cache_size(size_t index) { return(this->cache_size.at(index)); }
-size_t giga::Result::get_page_size(size_t index) { return(this->page_size.at(index)); }
+size_t giga::Result::get_init_size(size_t index) { return(this->init_size.at(index)); }
+size_t giga::Result::get_max_size(size_t index) { return(this->max_size.at(index)); }
 size_t giga::Result::get_n_clients(size_t index) { return(this->n_clients.at(index)); }
 double giga::Result::get_read(size_t index) { return((this->read.at(index) / this->n_transactions.at(index)) * 100); }
 double giga::Result::get_write(size_t index) { return((this->write.at(index) / this->n_transactions.at(index)) * 100); }
@@ -51,8 +53,9 @@ double giga::Result::get_miss_rate(size_t index) { return(this->miss_rate.at(ind
 double giga::Result::get_erase(size_t index) { return((this->erase.at(index) / this->n_transactions.at(index)) * 100); }
 
 std::string giga::Result::pop_front(bool is_tsv, bool include_header) {
-	size_t pad = 11;
-	size_t percent_pad = 6;
+	size_t large_pad = 11;
+	size_t med_pad = 6;
+	size_t small_pad = 3;
 	std::string sep = " | ";
 
 	if(this->get_size() == 0) {
@@ -62,12 +65,12 @@ std::string giga::Result::pop_front(bool is_tsv, bool include_header) {
 	std::stringstream buffer;
 
 	if(include_header) {
-		buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(percent_pad) << "R (%)" << sep << std::setw(percent_pad) << "W (%)" << sep << std::setw(percent_pad) << "I (%)" << sep << std::setw(percent_pad) << "E (%)" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (us)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << sep << std::setw(pad) << "miss (%)" << std::endl;
+		buffer << std::setw(large_pad) << "trial" << sep << std::setw(small_pad) << "tag" << sep << std::setw(med_pad) << "R (%)" << sep << std::setw(med_pad) << "W (%)" << sep << std::setw(med_pad) << "I (%)" << sep << std::setw(med_pad) << "E (%)" << sep << std::setw(large_pad) << "tput (B/us)" << sep << std::setw(large_pad) << "lat (us)" << sep << std::setw(large_pad) << "file (B)" << sep << std::setw(large_pad) << "data (B)" << sep << std::setw(large_pad) << "cache" << sep << std::setw(large_pad) << "init (B)" << sep << std::setw(large_pad) << "max (B)" << sep << std::setw(small_pad) << "N" << sep << std::setw(large_pad) << "miss (%)" << std::endl;
 		buffer << std::string(buffer.str().length(), '=') << std::endl;
 	}
 
 	buffer << std::setprecision(2) << std::fixed;
-	buffer << std::setw(pad) << this->index.at(0) + 1 << sep << std::setw(3) << this->get_tag(0) << sep << std::setw(percent_pad) << this->get_read(0) << sep << std::setw(percent_pad) << this->get_write(0) << sep << std::setw(percent_pad) << this->get_insert(0) << sep << std::setw(percent_pad) << this->get_erase(0) << sep << std::setw(pad) << this->get_throughput(0) << sep << std::setw(pad) << this->get_latency(0) << sep << std::setw(pad) << this->get_file_size(0) << sep << std::setw(pad) << this->get_data_size(0) << sep << std::setw(pad) << this->get_cache_size(0) << sep << std::setw(pad) << this->get_page_size(0) << sep << std::setw(pad) << this->get_n_clients(0) << sep << std::setw(pad) << this->get_miss_rate(0) << std::endl;
+	buffer << std::setw(large_pad) << this->index.at(0) + 1 << sep << std::setw(small_pad) << this->get_tag(0) << sep << std::setw(med_pad) << this->get_read(0) << sep << std::setw(med_pad) << this->get_write(0) << sep << std::setw(med_pad) << this->get_insert(0) << sep << std::setw(med_pad) << this->get_erase(0) << sep << std::setw(large_pad) << this->get_throughput(0) << sep << std::setw(large_pad) << this->get_latency(0) << sep << std::setw(large_pad) << this->get_file_size(0) << sep << std::setw(large_pad) << this->get_data_size(0) << sep << std::setw(large_pad) << this->get_cache_size(0) << sep << std::setw(large_pad) << this->get_init_size(0) << sep << std::setw(large_pad) << this->get_max_size(0) << sep << std::setw(small_pad) << this->get_n_clients(0) << sep << std::setw(large_pad) << this->get_miss_rate(0) << std::endl;
 
 	std::string ret = buffer.str();
 	// format to tabs
@@ -107,7 +110,8 @@ std::string giga::Result::pop_front(bool is_tsv, bool include_header) {
 	this->erase.pop_front();
 	this->file_size.pop_front();
 	this->cache_size.pop_front();
-	this->page_size.pop_front();
+	this->init_size.pop_front();
+	this->max_size.pop_front();
 	this->miss_rate.pop_front();
 	this->n_clients.pop_front();
 	this->size--;
@@ -181,7 +185,7 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 		}
 	}
 
-	this->result->push_back(tag, access_pattern.size() * n_attempts * n_clients, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_miss_rate(), n_clients);
+	this->result->push_back(tag, access_pattern.size() * n_attempts * n_clients, *runtime, *data, type_tracker.at(0), type_tracker.at(1), type_tracker.at(2), type_tracker.at(3), f_size, f->get_config().get_cache_size(), f->get_config().get_i_page_size(), f->get_config().get_m_page_size(), f->get_miss_rate(), n_clients);
 }
 
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {

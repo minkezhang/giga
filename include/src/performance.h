@@ -12,7 +12,7 @@ namespace giga {
 	class Result {
 		public:
 			Result();
-			void push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, double miss_rate, size_t n_clients);
+			void push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t init_size, size_t max_size, double miss_rate, size_t n_clients);
 
 			size_t get_size();
 
@@ -22,7 +22,8 @@ namespace giga {
 			size_t get_file_size(size_t index);
 			double get_data_size(size_t index);
 			size_t get_cache_size(size_t index);
-			size_t get_page_size(size_t index);
+			size_t get_init_size(size_t index);
+			size_t get_max_size(size_t index);
 			size_t get_n_clients(size_t index);
 			double get_read(size_t index);
 			double get_write(size_t index);
@@ -45,7 +46,8 @@ namespace giga {
 			std::deque<size_t> total_data;
 			std::deque<size_t> file_size;
 			std::deque<size_t> cache_size;
-			std::deque<size_t> page_size;
+			std::deque<size_t> init_size;
+			std::deque<size_t> max_size;
 			std::deque<size_t> n_clients;
 			std::deque<size_t> read;
 			std::deque<size_t> write;

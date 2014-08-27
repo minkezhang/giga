@@ -15,7 +15,7 @@ TEST_CASE("giga|performance-result") {
 
 	REQUIRE_THROWS_AS(r.to_string(), exceptionpp::InvalidOperation);
 
-	REQUIRE_NOTHROW(r.push_back("EGR", 1000, 1000, 1000, 1, 1, 1, 97, 1000, 1000, 10, .94, 4));
+	REQUIRE_NOTHROW(r.push_back("EGR", 1000, 1000, 1000, 1, 1, 1, 97, 1000, 1000, 1000, 10, .94, 4));
 	REQUIRE_NOTHROW(r.pop_front(true, true));
 
 	REQUIRE_THROWS_AS(r.to_string(), exceptionpp::InvalidOperation);
