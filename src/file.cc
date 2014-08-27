@@ -327,48 +327,76 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+	// special case -- extend the page list with another tail node (current tail node is now expired)
+	if((*(info->get_page())) == this->pages.back()) {
+		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, this->config.get_i_page_size(), true));
+		this->pages.insert(this->pages.end(), p);
+	}
 
 	size_t len = val.length();
+
 	while(len > 0) {
 		size_t n_bytes = this->config.probe((*(info->get_page())), info->get_page_offset(), len);
+		// special case -- handle the 0-sized expired tail node
+		if(info->get_page_offset() == (*(info->get_page()))->get_size()) {
+			n_bytes = this->config.get_i_page_size() > len ? len : this->config.get_i_page_size();
+		}
 		std::vector<uint8_t> buf = this->cache->r((*(info->get_page())));
 
-		// split page
-		std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, buf.size() - info->get_page_offset(), true));
-		this->pages.insert(std::next(info->get_page(), 1), p);
-		this->cache->w(p, std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end()));
+		if(n_bytes + (*(info->get_page()))->get_size() > this->config.get_m_page_size()) {
+			// split page
+			std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, buf.size() - info->get_page_offset(), true));
+			this->pages.insert(std::next(info->get_page(), 1), p);
+			this->cache->w(p, std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end()));
+			p->set_size(buf.size() - info->get_page_offset());
 
-		// adjust client -> page pointers
-		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
-			std::shared_ptr<giga::ClientData> tmp_info = it->second;
-			if(tmp_info->get_file_offset() > info->get_file_offset()) {
-				tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
-				// adjust same page
-				if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
-					tmp_info->set_page(std::next(tmp_info->get_page(), 1));
-					tmp_info->set_page_offset(tmp_info->get_page_offset() - info->get_page_offset());
+			// adjust client -> page pointers
+			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+				std::shared_ptr<giga::ClientData> tmp_info = it->second;
+				if(tmp_info->get_file_offset() > info->get_file_offset()) {
+					tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
+					// adjust same page
+					if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
+						tmp_info->set_page(std::next(tmp_info->get_page(), 1));
+						tmp_info->set_page_offset(tmp_info->get_page_offset() - info->get_page_offset());
+					}
 				}
 			}
-		}
 
-		// write to page
-		buf.erase(buf.begin() + info->get_page_offset(), buf.end());
-		buf.insert(buf.end(), val.begin() + (val.length() - len), val.begin() + (val.length() - len) + n_bytes);
-		this->cache->w((*(info->get_page())), buf);
-		(*(info->get_page()))->set_size(buf.size());
+			// write to page
+			buf.erase(buf.begin() + info->get_page_offset(), buf.end());
+			buf.insert(buf.end(), val.begin() + (val.length() - len), val.begin() + (val.length() - len) + n_bytes);
+			this->cache->w((*(info->get_page())), buf);
+			(*(info->get_page()))->set_size(buf.size());
 
-		info->set_file_offset(info->get_file_offset() + n_bytes);
-
-		if(info->get_page_offset() + n_bytes < this->config.get_m_page_size()) {
-			info->set_page_offset(info->get_page_offset() + n_bytes);
-		} else {
+			info->set_file_offset(info->get_file_offset() + n_bytes);
 			info->set_page_offset(0);
 			info->set_page(std::next(info->get_page(), 1));
+		} else {
+			// insert to present page
+			buf.insert(buf.begin() + info->get_page_offset(), val.begin() + (val.length() - len), val.begin() + (val.length() - len) + n_bytes);
+			this->cache->w((*(info->get_page())), buf);
+			(*(info->get_page()))->set_size((*(info->get_page()))->get_size() + n_bytes);
+
+			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+				std::shared_ptr<giga::ClientData> tmp_info = it->second;
+				if(tmp_info->get_file_offset() > info->get_file_offset()) {
+					tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
+					// adjust same page
+					if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
+						tmp_info->set_page_offset(tmp_info->get_page_offset() + n_bytes);
+					}
+				}
+			}
+
+			info->set_file_offset(info->get_file_offset() + n_bytes);
+			info->set_page_offset(info->get_page_offset() + n_bytes);
 		}
+
 		len -= n_bytes;
 		this->set_size(this->get_size() + n_bytes);
 	}
-
+	std::vector<uint8_t> b = this->cache->r((*(info->get_page())));
 	return(val.length() - len);
 }
 

@@ -196,12 +196,12 @@ TEST_CASE("giga|file-insert") {
 	REQUIRE(c_2->seek(100, false) == 0);
 	REQUIRE(c_1->seek(1, true) == 1);
 
-	REQUIRE(c_1->write("foo", true) == 3);
+	REQUIRE(c_1->write("zee", true) == 3);
 	REQUIRE(f->get_size() == 19);
 	REQUIRE(c_1->get_pos() == 4);
 	REQUIRE(c_2->get_pos() == 0);
 	REQUIRE(c_1->read(100).compare("oohello world!\n") == 0);
-	REQUIRE(c_2->read(100).compare("ffoooohello world!\n") == 0);
+	REQUIRE(c_2->read(100).compare("fzeeoohello world!\n") == 0);
 
 	REQUIRE(c_2->write("addendum") == 8);
 	REQUIRE(f->get_size() == 27);
@@ -221,12 +221,12 @@ TEST_CASE("giga|file-write") {
 	REQUIRE(c->get_pos() == 0);
 	REQUIRE(c->write("abcde") == 5);
 	REQUIRE(c->get_pos() == 5);
+
 	REQUIRE(c->write("|world!\nEXTRAEXTRA") == 18);
 	REQUIRE(f->get_size() == 23);
 	REQUIRE(c->get_pos() == 23);
 
 	REQUIRE(c->seek(100, false) == 0);
-
 	REQUIRE(c->read(100).compare("abcde|world!\nEXTRAEXTRA") == 0);
 
 	c->close();
