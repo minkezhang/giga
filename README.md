@@ -9,10 +9,10 @@ Overview
 `giga` is a concurrent file I/O library which seeks to ameliorate large-file memory problems.
 
 The way in which files are accessed in many languages is to essentially `mmap` the contents of the file into RAM -- but doing so with large files present memory 
-allocation problems that do not have an easy solution. Moreover, as of this project, there is a sparsity of file libraries in the public which implements 
-`File::insert()` and `File::delete()` abstractions -- if a file were to be treated as a string, repeatedly calling file operations which alters the file length will be 
-very inefficient due to the implicit `memcpy` invocations. Finally, there is also a sparsity of file libraries which deal with _concurrent_ file operations, which is 
-becoming an increasingly desired feature in today's multiprocessor environment.
+allocation problems that do not have an easy solution. Moreover, as of this project, there is a sparsity of file libraries in the public which implements file `insert` 
+and `delete` abstractions -- if a file were to be treated as a string, repeatedly calling file operations which alters the file length will be very inefficient due to 
+the implicit `memcpy` invocations. Finally, there is also a sparsity of file libraries which deal with *concurrent* file operations, which is becoming an increasingly 
+desired feature in today's multiprocessor environment.
 
 Thus, we need a file library which can:
 * read files in its entirety without needing to allocate the size of the file of memory space to do so,
@@ -48,6 +48,9 @@ cd tutorial/
 make
 ./tutorial.app
 ```
+
+All header and library files in the tutorial are symbolically linked to `tutorial/external/giga` -- removing the symoblic link, and cloning `giga` (and installing 
+dependencies, as per above) into the same place will not break the `Makefile`.
 
 ```cpp
 // create a new file ('+') in the case it does not exist, and open with read-write properties
@@ -104,7 +107,7 @@ Todo
 ----
 
 * tutorial
-* implement a better caching backend (will NOT break interface)
+* implement a **better caching backend** (will **NOT** break `giga` interface)
 * more code documentation
 
 Contact
