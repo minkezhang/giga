@@ -13,9 +13,10 @@
 
 bool giga::Result::is_dup(char l, char r) { return(((l == ' ') || (l == '\n')) && (l == r)); }
 
-giga::Result::Result() : size(0) {}
+giga::Result::Result() : size(0), i_count(0) {}
 
 void giga::Result::push_back(std::string tag, size_t n_transactions, double total_runtime, size_t total_data, size_t read, size_t write, size_t insert, size_t erase, size_t file_size, size_t cache_size, size_t page_size, double miss_rate, size_t n_clients) {
+	this->index.push_back(i_count++);
 	this->tag.push_back(tag);
 	this->n_transactions.push_back(n_transactions);
 	this->total_runtime.push_back(total_runtime);
@@ -48,7 +49,7 @@ double giga::Result::get_insert(size_t index) { return((this->insert.at(index) /
 double giga::Result::get_miss_rate(size_t index) { return(this->miss_rate.at(index) * 100); }
 double giga::Result::get_erase(size_t index) { return((this->erase.at(index) / this->n_transactions.at(index)) * 100); }
 
-std::string giga::Result::to_string(bool is_tsv) {
+std::string giga::Result::pop_front(bool is_tsv, bool include_header) {
 	size_t pad = 11;
 	size_t percent_pad = 6;
 	std::string sep = " | ";
@@ -58,12 +59,14 @@ std::string giga::Result::to_string(bool is_tsv) {
 	}
 
 	std::stringstream buffer;
-	buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(percent_pad) << "R (%)" << sep << std::setw(percent_pad) << "W (%)" << sep << std::setw(percent_pad) << "I (%)" << sep << std::setw(percent_pad) << "E (%)" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (us)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << sep << std::setw(pad) << "miss (%)" << std::endl;
-	buffer << std::string(buffer.str().length(), '=') << std::endl;
-	for(size_t index = 0; index < this->get_size(); ++index) {
-		buffer << std::setprecision(2) << std::fixed;
-		buffer << std::setw(pad) << index + 1 << sep << std::setw(3) << this->get_tag(index) << sep << std::setw(percent_pad) << this->get_read(index) << sep << std::setw(percent_pad) << this->get_write(index) << sep << std::setw(percent_pad) << this->get_insert(index) << sep << std::setw(percent_pad) << this->get_erase(index) << sep << std::setw(pad) << this->get_throughput(index) << sep << std::setw(pad) << this->get_latency(index) << sep << std::setw(pad) << this->get_file_size(index) << sep << std::setw(pad) << this->get_data_size(index) << sep << std::setw(pad) << this->get_cache_size(index) << sep << std::setw(pad) << this->get_page_size(index) << sep << std::setw(pad) << this->get_n_clients(index) << sep << std::setw(pad) << this->get_miss_rate(index) << std::endl;
+
+	if(include_header) {
+		buffer << std::setw(pad) << "trial" << sep << std::setw(3) << "tag" << sep << std::setw(percent_pad) << "R (%)" << sep << std::setw(percent_pad) << "W (%)" << sep << std::setw(percent_pad) << "I (%)" << sep << std::setw(percent_pad) << "E (%)" << sep << std::setw(pad) << "tput (B/us)" << sep << std::setw(pad) << "lat (us)" << sep << std::setw(pad) << "file (B)" << sep << std::setw(pad) << "data (B)" << sep << std::setw(pad) << "cache" << sep << std::setw(pad) << "page (B)" << sep << std::setw(pad) << "n_clients" << sep << std::setw(pad) << "miss (%)" << std::endl;
+		buffer << std::string(buffer.str().length(), '=') << std::endl;
 	}
+
+	buffer << std::setprecision(2) << std::fixed;
+	buffer << std::setw(pad) << this->index.at(0) + 1 << sep << std::setw(3) << this->get_tag(0) << sep << std::setw(percent_pad) << this->get_read(0) << sep << std::setw(percent_pad) << this->get_write(0) << sep << std::setw(percent_pad) << this->get_insert(0) << sep << std::setw(percent_pad) << this->get_erase(0) << sep << std::setw(pad) << this->get_throughput(0) << sep << std::setw(pad) << this->get_latency(0) << sep << std::setw(pad) << this->get_file_size(0) << sep << std::setw(pad) << this->get_data_size(0) << sep << std::setw(pad) << this->get_cache_size(0) << sep << std::setw(pad) << this->get_page_size(0) << sep << std::setw(pad) << this->get_n_clients(0) << sep << std::setw(pad) << this->get_miss_rate(0) << std::endl;
 
 	std::string ret = buffer.str();
 	// format to tabs
@@ -91,7 +94,22 @@ std::string giga::Result::to_string(bool is_tsv) {
 
 		ret = ret.substr(1);
 	}
+	this->remove(0);
 	return(ret);
+}
+
+std::string giga::Result::to_string(bool is_tsv) {
+	size_t size = this->get_size();
+
+	if(this->get_size() == 0) {
+		throw(exceptionpp::InvalidOperation("giga::Result::to_string", "reporting zero trials"));
+	}
+
+	std::stringstream buf;
+	for(size_t i = 0; i < size; ++i) {
+		buf << this->pop_front(is_tsv, i == 0);
+	}
+	return(buf.str());
 }
 
 std::ostream& operator<< (std::ostream& os, giga::Result& obj) {

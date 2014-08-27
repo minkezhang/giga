@@ -29,11 +29,16 @@ namespace giga {
 			double get_erase(size_t index);
 			double get_miss_rate(size_t index);
 
+			std::string pop_front(bool is_tsv, bool include_header);
 			std::string to_string(bool is_tsv = false);
 			static bool is_dup(char l, char r);
+
 		private:
 			size_t size;
+			size_t i_count;
+
 			std::vector<std::string> tag;
+			std::vector<size_t> index;
 			std::vector<size_t> n_transactions;
 			std::vector<double> total_runtime;
 			std::vector<size_t> total_data;

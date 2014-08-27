@@ -39,7 +39,7 @@ TEST_CASE("giga|performance") {
 
 	srand(time(NULL));
 
-	size_t pattern_size = 1000;
+	size_t pattern_size = 100;
 	size_t n_attempts = 100;
 
 	// performance testing
@@ -63,18 +63,20 @@ TEST_CASE("giga|performance") {
 
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("R", access_pattern_a, type_r, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result().pop_front(false, n_clients == 0) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("W", access_pattern_a, type_w, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result().pop_front(false, false) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("I", access_pattern_a, type_i, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result().pop_front(false, false) << std::flush;
 	}
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("E", access_pattern_b, type_e, size, n_clients + 1, n_attempts));
+		std::cout << p->get_result().pop_front(false, false) << std::flush;
 	}
-
-	std::cout << p->get_result().to_string();
 
 	#endif
 }
