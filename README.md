@@ -26,6 +26,7 @@ Installation
 git clone https://github.com/cripplet/giga.git
 cd giga
 git submodule update --init --recursive
+# test the lib -- this will take a VERY long time
 make CONCURRENT=false PERFORMANCE=true test
 ```
 
