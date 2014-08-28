@@ -29,9 +29,9 @@ TEST_CASE("giga|performance") {
 
 	size_t pattern_size = 1000;
 	size_t n_attempts = 100;
-	size_t file_size_metric = 1 * 1024;
-	size_t page_size_metric = file_size_metric;
-	size_t edit_size_metric = 1024;
+	size_t file_size_metric = 16 * 1024;
+	size_t page_size_metric = 1024;
+	size_t edit_size_metric = 4 * 1024;
 
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size_metric, 3 * page_size_metric, 100)));
 
