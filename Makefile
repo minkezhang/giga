@@ -4,6 +4,8 @@ CC=g++
 #	-Wl,--no-as-need -- cf. http://bit.ly/ToQTcC
 #	-fstack-protector-all -- cf. http://bit.ly/1vXj2nU
 CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic -fstack-protector-all
+# turbocharge seeking on large files
+CFLAGS+=-D _FILE_OFFSET_BITS=64
 
 #custom flags
 CONCURRENT=false
