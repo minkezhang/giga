@@ -365,6 +365,12 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 	size_t len = val.length();
 
 	while(len > 0) {
+		if(info->get_page_offset() > (*(info->get_page()))->get_size()) {
+			std::stringstream buf;
+			buf << "about to execute invalid probe: len == " << len << ", off == " << info->get_page_offset() << ", size: " << (*(info->get_page()))->get_size();
+			throw(exceptionpp::RuntimeError("giga::File::i", buf.str()));
+		}
+
 		size_t n_bytes = this->config.probe((*(info->get_page())), info->get_page_offset(), len);
 
 		// special case -- handle the 0-sized expired tail node
@@ -390,6 +396,9 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 					if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
 						tmp_info->set_page(std::next(tmp_info->get_page(), 1));
 						tmp_info->set_page_offset(tmp_info->get_page_offset() - info->get_page_offset());
+						if(tmp_info->get_page_offset() > (*(tmp_info->get_page()))->get_size()) {
+							throw(exceptionpp::RuntimeError("giga::File::i", "tmp_info set wrongly"));
+						}
 					}
 				}
 			}
@@ -417,21 +426,26 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 					// adjust same page
 					if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
 						tmp_info->set_page_offset(tmp_info->get_page_offset() + n_bytes);
+						if(tmp_info->get_page_offset() > (*(tmp_info->get_page()))->get_size()) {
+							throw(exceptionpp::RuntimeError("giga::File::i", "set invalid page offset"));
+						}
 					}
 				}
 			}
 
 			info->set_file_offset(info->get_file_offset() + n_bytes);
 			info->set_page_offset(info->get_page_offset() + n_bytes);
+			if(info->get_page_offset() > (*(info->get_page()))->get_size()) {
+				throw(exceptionpp::RuntimeError("giga::File::i", "set invalid page offset"));
+			}
 		}
 
 		len -= n_bytes;
 		this->set_size(this->get_size() + n_bytes);
 	}
-	std::vector<uint8_t> b = this->cache->r((*(info->get_page())));
 	if(is_back) {
-		info->set_page(std::prev(this->pages.end(), 1));
-		info->set_page_offset(0);
+		//info->set_page(std::prev(this->pages.end(), 1));
+		//info->set_page_offset(0);
 	}
 	return(val.length() - len);
 }

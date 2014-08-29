@@ -1,6 +1,8 @@
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
+#include <iostream>
+
 #include "src/file.h"
 
 TEST_CASE("giga|config-probe") {
@@ -208,6 +210,21 @@ TEST_CASE("giga|file-insert") {
 	REQUIRE(c_1->seek(100, false) == 0);
 	REQUIRE(c_1->seek(4, true) == 4);
 	REQUIRE(c_1->read(100).compare("oohello world!\naddendum") == 0);
+
+	c_1->close();
+	c_2->close();
+
+	f->load();
+
+	c_1->open();
+	c_2->open();
+
+	REQUIRE(c_2->seek(2, true) == 2);
+	REQUIRE(c_1->write("ab", true) == 2);
+	REQUIRE(c_1->read(100).compare("hello world!\n") == 0);
+	REQUIRE(c_2->read(100).compare("llo world!\n") == 0);
+	REQUIRE(c_2->seek(15, false) == 0);
+	REQUIRE(c_2->read(100).compare("abhello world!\n") == 0);
 
 	c_1->close();
 	c_2->close();
