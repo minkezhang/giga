@@ -28,9 +28,9 @@ TEST_CASE("giga|performance") {
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::W}), std::vector<size_t>({100}), 1, 100), exceptionpp::InvalidOperation);
 
 	size_t n_attempts = 1;
-	size_t file_size = 1024 * 1024 * 1024;
+	size_t file_size = 1024 * 1024; //  * 1024;
 	size_t page_size = 16 * 1024;
-	size_t edit_size = 512;
+	size_t edit_size = 4 * 512;
 	size_t pattern_size = file_size / edit_size;
 
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size, 3 * page_size, 100)));
@@ -74,6 +74,8 @@ TEST_CASE("giga|performance") {
 	REQUIRE(f->get_size() == file_size);
 	c->close();
 
+	REQUIRE_NOTHROW(p->run("Rsq", access_pattern_seq, type_r, size, 1, n_attempts));
+/*
 	// sequential sequence writes
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("Rsq", access_pattern_seq, type_r, size, n_clients + 1, n_attempts));
@@ -109,6 +111,6 @@ TEST_CASE("giga|performance") {
 		REQUIRE_NOTHROW(p->run("Ern", access_pattern_ran, type_e, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
-
+*/
 	#endif
 }

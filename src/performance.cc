@@ -1,12 +1,19 @@
 #include <algorithm>
 #include <deque>
+#include <cstdio>
+#include <cstdlib>
+#include <cstring>
 #include <ctime>
 #include <iomanip>
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <sys/types.h>
+#include <sys/sysinfo.h>
 #include <thread>
 #include <vector>
+
+#include <iostream>
 
 #include "libs/exceptionpp/exception.h"
 
@@ -144,6 +151,32 @@ giga::Performance::Performance() : result(std::shared_ptr<giga::Result> (new gig
 void giga::Performance::set_file(std::shared_ptr<giga::File> file) { this->file = file; }
 std::shared_ptr<giga::Result> giga::Performance::get_result() { return(this->result); }
 
+size_t giga::Performance::parse_line(char *line) {
+	int i = strlen(line);
+	while(*line < '0' || *line > '9') { line++; }
+	line[i - 3] = '\0';
+	i = (size_t) atoi(line);
+	return(i);
+}
+
+size_t giga::Performance::get_usage() {
+	FILE *fp = fopen("/proc/self/status", "r");
+	size_t result = 0;
+	char line[128];
+
+	while(fgets(line, 128, fp) != NULL) {
+		if(strncmp(line, "VmRSS:", 6) == 0) {
+			result = parse_line(line);
+			break;
+		}
+	}
+
+	fclose(fp);
+	fp = NULL;
+
+	return(result * 1024);
+}
+
 void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size, size_t n_clients, size_t n_attempts) {
 	auto f = this->file.lock();
 	if(f == NULL) {
@@ -195,6 +228,8 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 	double local_runtime = 0;
 	std::clock_t start;
 	std::vector<uint8_t> buf;
+	std::string str;
+	size_t mem = 0;
 	for(size_t i = 0; i < access_pattern.size(); ++i) {
 		start = std::clock();
 		client->seek(access_pattern.at(i), true, true);
@@ -204,6 +239,7 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 				start = std::clock();
 				client->read(data_size.at(i));
 				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
+				mem = giga::Performance::get_usage();
 				break;
 			case giga::Performance::W:
 				buf = std::vector<uint8_t> (data_size.at(i), 0xff);
@@ -222,6 +258,12 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 				client->erase(data_size.at(i));
 				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 				break;
+		}
+		if(mem != giga::Performance::get_usage()) {
+			if(giga::Performance::get_usage() - mem == 32 * 1024) {
+				std::cout << "changed mem on loop i: " << i << ", old: " << mem / 1024 << " vs. new: " << giga::Performance::get_usage() / 1024 << " kB" << std::endl;
+			//	while(1);
+			}
 		}
 		local_data += data_size.at(i);
 	}

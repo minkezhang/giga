@@ -70,6 +70,9 @@ namespace giga {
 			const static uint8_t I = 2;
 			const static uint8_t E = 3;
 
+			static size_t parse_line(char *line);
+			static size_t get_usage();
+
 		private:
 			std::weak_ptr<File> file;
 			std::shared_ptr<Result> result;
