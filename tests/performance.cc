@@ -26,7 +26,7 @@ TEST_CASE("giga|performance") {
 
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::W}), std::vector<size_t>({100}), 1, 100), exceptionpp::InvalidOperation);
 
-	size_t n_attempts = 10;
+	size_t n_attempts = 1;
 	size_t file_size = 1024 * 1024 * 1024;
 	size_t page_size = 16 * 1024;
 	size_t edit_size = 512;
@@ -44,6 +44,16 @@ TEST_CASE("giga|performance") {
 
 	#ifdef _GIGA_PERFORMANCE_TESTS
 
+	auto buf = std::vector<uint8_t> (file_size / pattern_size, 0xff);
+	FILE *fp = fopen("tests/files/giga-performance", "w");
+	for(size_t i = 0; i < pattern_size; ++i) {
+		fwrite(buf.data(), sizeof(uint8_t), buf.size(), fp);
+	}
+	fclose(fp);
+	fp = NULL;
+
+	f->load();
+
 	srand(time(NULL));
 
 	// performance testing
@@ -56,18 +66,10 @@ TEST_CASE("giga|performance") {
 	auto type_e = std::vector<uint8_t>(pattern_size, giga::Performance::E);
 	auto size = std::vector<size_t>(pattern_size, edit_size);
 
-	auto buf = std::vector<uint8_t> (file_size / pattern_size, 0xff);
 	for(size_t i = 0; i < pattern_size; ++i) {
-		c->write(std::string(buf.begin(), buf.end()));
 		access_pattern_seq.push_back(i * (file_size / pattern_size));
 		access_pattern_ran.push_back(rand() % file_size);
-		// save incrementally
-		if((f->get_size() % 1000000) == 0) {
-			c->save();
-		}
 	}
-	// write to disk
-	c->save();
 	REQUIRE(f->get_size() == file_size);
 	c->close();
 
