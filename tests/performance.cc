@@ -3,10 +3,13 @@
 #include <memory>
 #include <random>
 
+#include <iostream>
+
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
 #include "src/file.h"
+#include "src/page.h"
 #include "src/performance.h"
 
 TEST_CASE("giga|performance-result") {

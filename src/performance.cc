@@ -193,11 +193,12 @@ void giga::Performance::run(std::string tag, std::vector<size_t> access_pattern,
 void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runtime, const std::shared_ptr<std::atomic<size_t>>& data, const std::shared_ptr<giga::Client>& client, std::vector<size_t> access_pattern, std::vector<uint8_t> type, std::vector<size_t> data_size) {
 	size_t local_data = 0;
 	double local_runtime = 0;
+	std::clock_t start;
+	std::vector<uint8_t> buf;
 	for(size_t i = 0; i < access_pattern.size(); ++i) {
-		std::clock_t start = std::clock();
+		start = std::clock();
 		client->seek(access_pattern.at(i), true, true);
 		local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
-		std::vector<uint8_t> buf;
 		switch(type.at(i)) {
 			case giga::Performance::R:
 				start = std::clock();

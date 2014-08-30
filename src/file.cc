@@ -10,8 +10,6 @@
 #include <string>
 #include <sys/stat.h>
 
-#include <iostream>
-
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
