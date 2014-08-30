@@ -144,6 +144,21 @@ void giga::File::load() {
 			it = std::next(it, 1);
 		}
 	}
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator jt = this->lookaside.begin(); jt != this->lookaside.end(); ++jt) {
+			std::shared_ptr<giga::ClientData> tmp_info = it->second;
+			std::shared_ptr<giga::ClientData> tmp_jnfo = jt->second;
+			if(tmp_info->get_file_offset() > tmp_jnfo->get_file_offset() &&
+				tmp_info->get_page() == tmp_jnfo->get_page() &&
+				tmp_info->get_page_offset() <= tmp_jnfo->get_page_offset()) {
+				std::cout << "invalid file / page mismatch, SAVE" << std::endl;
+				// std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+				throw(exceptionpp::RuntimeError("giga::File::SAVE", "you know why"));
+			}
+		}
+	}
 }
 
 giga::Config giga::File::get_config() { return(this->config); }
@@ -166,9 +181,15 @@ void giga::File::align(const std::shared_ptr<giga::Client>& client) {
 
 size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bool is_forward, bool is_absolute) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+	std::cout << "SEEK" << std::endl;
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
 
 	len = (this->get_size() > len) ? len : this->get_size();
+
+	std::stringstream x, y;
+	x << "input: (client, len, is_forward, is_absolute): " << client->get_identifier() << ", " << len << ", " << is_forward << ", " << is_absolute << std::endl;
+	x << "  client: (page, file): " << info->get_page_offset() << ", " << info->get_file_offset() << std::endl;
+	x << "    size: (page, file): " << (*(info->get_page()))->get_size() << ", " << this->get_size() << std::endl;
 
 	if(is_absolute) {
 		if(is_forward) {
@@ -188,6 +209,24 @@ size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bo
 		}
 	}
 
+	y << "output: (len, is_forward): " << len << ", " << is_forward << std::endl;
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, ending: " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			std::cout << "final file offset: " << info->get_file_offset() << std::endl;
+			std::cout << "x: " << x.str() << std::endl;
+			std::cout << "y: " << y.str() << std::endl;
+			std::cout << "y: " << y.str() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::s", "you know why"));
+		}
+	}
+
 	if(len != 0) {
 		this->align(client);
 		if(is_forward) {
@@ -203,21 +242,88 @@ size_t giga::File::s(const std::shared_ptr<giga::Client>& client, size_t len, bo
 				}
 				len -= n_bytes;
 			}
+
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, during forward: " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(info->get_page()))->get_identifier() << std::endl;
+			std::cout << "final file offset: " << info->get_file_offset() << std::endl;
+			std::cout << "x: " << x.str() << std::endl;
+			std::cout << "y: " << y.str() << std::endl;
+			std::cout << "-: size: page " << (*(info->get_page()))->get_identifier() << std::endl;
+			std::cout << "-: size: file " << this->get_size() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::s", "you know why"));
+		}
+	}
+
 		} else {
 			while(len > 0 && (*(info->get_page())) != this->pages.front()) {
-				size_t n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+				size_t n_bytes;
+				do {
+					n_bytes = (*(info->get_page()))->probe(info->get_page_offset(), len, is_forward);
+					if(n_bytes == 0) {
+						info->set_page(std::prev(info->get_page(), 1));
+						info->set_page_offset((*(info->get_page()))->get_size());
+					}
+				} while(n_bytes == 0 && (*(info->get_page())) != this->pages.front());
+				if(n_bytes == 0) {
+					break;
+				}
 				info->set_file_offset(info->get_file_offset() - n_bytes);
 
-				if(info->get_page_offset() > n_bytes) {
+				if(info->get_page_offset() >= n_bytes) {
 					info->set_page_offset(info->get_page_offset() - n_bytes);
+					std::cout << "page offset: " << info->get_page_offset() << std::endl;
 				} else {
 					info->set_page(std::prev(info->get_page(), 1));
 					info->set_page_offset((*(info->get_page()))->get_size());
 				}
 				len -= n_bytes;
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, during back: " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(info->get_page()))->get_identifier() << std::endl;
+			std::cout << "final file offset: " << info->get_file_offset() << std::endl;
+			std::cout << "x: " << x.str() << std::endl;
+			std::cout << "y: " << y.str() << std::endl;
+			std::cout << "-: offs: page " << info->get_page_offset() << std::endl;
+			std::cout << "-: size: page " << (*(info->get_page()))->get_identifier() << std::endl;
+			std::cout << "-: size: file " << this->get_size() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::s", "you know why"));
+		}
+	}
+
 			}
 		}
 	}
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, ending: " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(info->get_page()))->get_identifier() << std::endl;
+			std::cout << "final file offset: " << info->get_file_offset() << std::endl;
+			std::cout << "x: " << x.str() << std::endl;
+			std::cout << "y: " << y.str() << std::endl;
+			std::cout << "-: size: page " << (*(info->get_page()))->get_identifier() << std::endl;
+			std::cout << "-: size: file " << this->get_size() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::s", "you know why"));
+		}
+	}
+
 	return(info->get_file_offset());
 }
 
@@ -230,6 +336,18 @@ std::string giga::File::r(const std::shared_ptr<giga::Client>& client, size_t le
 
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, beginning: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::r", "you know why"));
+		}
+	}
 
 	std::string val = "";
 	while(len > 0 && (*(info->get_page())) != this->pages.back()) {
@@ -247,6 +365,18 @@ std::string giga::File::r(const std::shared_ptr<giga::Client>& client, size_t le
 		len -= n_bytes;
 	}
 
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, ending: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::r", "you know why"));
+		}
+	}
+
 	return(val);
 }
 
@@ -259,6 +389,18 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, beginning: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::w", "you know why"));
+		}
+	}
 
 	size_t len = val.length();
 	while(len > 0 && (*(info->get_page())) != this->pages.back()) {
@@ -285,6 +427,18 @@ size_t giga::File::w(const std::shared_ptr<giga::Client>& client, std::string va
 		len -= n_bytes;
 	}
 
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, ending: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::w", "you know why"));
+		}
+	}
+
 	return((val.length() - len) + this->i(client, val.substr(val.length() - len)));
 }
 
@@ -297,6 +451,18 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 
 	this->align(client);
 	std::shared_ptr<giga::ClientData> info = this->lookaside[client->get_identifier()];
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, beginning: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::d", "you know why"));
+		}
+	}
 
 	size_t expected = len;
 
@@ -342,11 +508,24 @@ size_t giga::File::d(const std::shared_ptr<giga::Client>& client, size_t len) {
 		this->set_size(this->get_size() - n_bytes);
 	}
 
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, ending: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::d", "you know why"));
+		}
+	}
+
 	return(expected - len);
 }
 
 size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string val) {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
+	std::cout << "INSERT" << std::endl;
 
 	if(!(this->mode & giga::File::write_only)) {
 		throw(exceptionpp::InvalidOperation("giga::File::i", "permission denied"));
@@ -362,7 +541,23 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		this->pages.insert(this->pages.end(), p);
 	}
 
+	if((*(info->get_page())) == this->pages.front()) {
+		info->set_page(std::next(info->get_page(), 1));
+	}
+
 	size_t len = val.length();
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, beginning: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::i", "you know why"));
+		}
+	}
 
 	while(len > 0) {
 		if(info->get_page_offset() > (*(info->get_page()))->get_size()) {
@@ -384,8 +579,9 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 			// split page
 			std::shared_ptr<giga::Page> p (new giga::Page(this->p_count++, "", 0, buf.size() - info->get_page_offset(), true));
 			this->pages.insert(std::next(info->get_page(), 1), p);
-			this->cache->w(p, std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end()));
-			p->set_size(buf.size() - info->get_page_offset());
+			std::vector<uint8_t> b = std::vector<uint8_t>(buf.begin() + info->get_page_offset(), buf.end());
+			this->cache->w(p, b);
+			p->set_size(b.size());
 
 			// adjust client -> page pointers
 			for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
@@ -393,12 +589,9 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 				if(tmp_info->get_file_offset() > info->get_file_offset()) {
 					tmp_info->set_file_offset(tmp_info->get_file_offset() + n_bytes);
 					// adjust same page
-					if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() > info->get_page_offset())) {
+					if((tmp_info->get_page() == info->get_page()) && (tmp_info->get_page_offset() >= info->get_page_offset())) {
 						tmp_info->set_page(std::next(tmp_info->get_page(), 1));
 						tmp_info->set_page_offset(tmp_info->get_page_offset() - info->get_page_offset());
-						if(tmp_info->get_page_offset() > (*(tmp_info->get_page()))->get_size()) {
-							throw(exceptionpp::RuntimeError("giga::File::i", "tmp_info set wrongly"));
-						}
 					}
 				}
 			}
@@ -412,6 +605,8 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 			info->set_file_offset(info->get_file_offset() + n_bytes);
 			info->set_page_offset(0);
 			info->set_page(std::next(info->get_page(), 1));
+
+
 		} else {
 			// insert to present page
 			buf.insert(buf.begin() + info->get_page_offset(), val.begin() + (val.length() - len), val.begin() + (val.length() - len) + n_bytes);
@@ -443,10 +638,24 @@ size_t giga::File::i(const std::shared_ptr<giga::Client>& client, std::string va
 		len -= n_bytes;
 		this->set_size(this->get_size() + n_bytes);
 	}
+
 	if(is_back) {
-		//info->set_page(std::prev(this->pages.end(), 1));
-		//info->set_page_offset(0);
+		info->set_page(std::prev(this->pages.end(), 1));
+		info->set_page_offset(0);
 	}
+
+	// CHECK FOR ERRORS V2 MINKE
+	for(std::map<cachepp::identifier, std::shared_ptr<giga::ClientData>>::iterator it = this->lookaside.begin(); it != this->lookaside.end(); ++it) {
+		std::shared_ptr<giga::ClientData> tmp_info = it->second;
+		if(tmp_info->get_file_offset() > info->get_file_offset() &&
+			tmp_info->get_page() == info->get_page() &&
+			tmp_info->get_page_offset() <= info->get_page_offset()) {
+			std::cout << "invalid file / page mismatch, ending: target " << it->first << ", self " << client->get_identifier() << std::endl;
+			std::cout << "offending page id: " << (*(tmp_info->get_page()))->get_identifier() << std::endl;
+			throw(exceptionpp::RuntimeError("giga::File::i", "you know why"));
+		}
+	}
+
 	return(val.length() - len);
 }
 

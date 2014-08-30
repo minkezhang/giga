@@ -73,6 +73,7 @@ TEST_CASE("giga|performance") {
 
 	c->close();
 
+	std::cout << "REQUIRE_NOTHROW PERFORMANCE TEST" << std::endl;
 	REQUIRE_NOTHROW(p->run("Isq", access_pattern_seq, type_i, size, 10, n_attempts));
 
 /*
