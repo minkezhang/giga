@@ -3,8 +3,6 @@
 #include <memory>
 #include <random>
 
-#include <iostream>
-
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
