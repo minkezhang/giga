@@ -1,8 +1,6 @@
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
 
-#include <iostream>
-
 #include "src/file.h"
 
 TEST_CASE("giga|config-probe") {

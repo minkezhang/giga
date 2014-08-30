@@ -1,8 +1,7 @@
 #include <ctime>
+#include <iostream>
 #include <memory>
 #include <random>
-
-#include <iostream>
 
 #include "libs/catch/catch.hpp"
 #include "libs/exceptionpp/exception.h"
@@ -70,13 +69,8 @@ TEST_CASE("giga|performance") {
 	// write to disk
 	c->save();
 	REQUIRE(f->get_size() == file_size);
-
 	c->close();
 
-	std::cout << "REQUIRE_NOTHROW PERFORMANCE TEST" << std::endl;
-	REQUIRE_NOTHROW(p->run("Isq", access_pattern_seq, type_i, size, 10, n_attempts));
-
-/*
 	// sequential sequence writes
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("Rsq", access_pattern_seq, type_r, size, n_clients + 1, n_attempts));
@@ -86,12 +80,10 @@ TEST_CASE("giga|performance") {
 		REQUIRE_NOTHROW(p->run("Wsq", access_pattern_seq, type_w, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
-	std::cout << "STARTING PERFORMANCE" << std::endl;
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("Isq", access_pattern_seq, type_i, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
-
 	for(size_t n_clients = 0; n_clients < 4; ++n_clients) {
 		REQUIRE_NOTHROW(p->run("Esq", access_pattern_seq, type_e, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
@@ -114,6 +106,6 @@ TEST_CASE("giga|performance") {
 		REQUIRE_NOTHROW(p->run("Ern", access_pattern_ran, type_e, size, n_clients + 1, n_attempts));
 		std::cout << p->get_result()->pop_front(false, false) << std::flush;
 	}
-*/
+
 	#endif
 }
