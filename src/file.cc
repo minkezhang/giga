@@ -10,6 +10,8 @@
 #include <string>
 #include <sys/stat.h>
 
+#include <iostream>
+
 #include "libs/cachepp/simpleserialcache.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -539,7 +541,6 @@ void giga::File::close(const std::shared_ptr<giga::Client>& client) {
 
 void giga::File::save() {
 	std::lock_guard<std::recursive_mutex> l(*this->l);
-
 	this->cache->clear();
 
 	std::stringstream name;
@@ -551,7 +552,7 @@ void giga::File::save() {
 	FILE *fp = fopen(path.str().c_str(), "w");
 	for(std::list<std::shared_ptr<giga::Page>>::iterator it = this->pages.begin(); it != this->pages.end(); ++it) {
 		std::vector<uint8_t> buf = this->cache->r(*it);
-		fputs(std::string(buf.begin(), buf.end()).c_str(), fp);
+		fwrite(buf.data(), sizeof(uint8_t), buf.size(), fp);
 	}
 	fclose(fp);
 	fp = NULL;
