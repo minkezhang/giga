@@ -66,6 +66,8 @@ void giga::Page::aux_load() {
 
 	std::vector<uint8_t> buf(this->get_size(), 0);
 
+	std::cout << "loading a page" << std::endl;
+
 	// load data into the page
 	if(!this->get_is_dirty()) {
 		FILE *fp = fopen(this->get_filename().c_str(), "r");
@@ -83,6 +85,7 @@ void giga::Page::aux_load() {
 		if(fread(buf.data(), sizeof(char), this->get_size(), fp) < this->get_size()) {
 			fclose(fp);
 			fp = NULL;
+			std::cout << "cached: " << this->cached << ", filename: " << this->get_filename() << std::endl;
 			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
 		}
 		fclose(fp);
@@ -107,6 +110,7 @@ void giga::Page::aux_unload() {
 	fp = NULL;
 
 	this->data.clear();
+
 	std::cout << "unloading a page" << std::endl;
 	std::vector<uint8_t>().swap(this->data);
 
