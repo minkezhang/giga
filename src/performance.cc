@@ -260,10 +260,7 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 				break;
 		}
 		if(mem != giga::Performance::get_usage()) {
-			if(giga::Performance::get_usage() - mem == 32 * 1024) {
-				std::cout << "changed mem on loop i: " << i << ", old: " << mem / 1024 << " vs. new: " << giga::Performance::get_usage() / 1024 << " kB" << std::endl;
-			//	while(1);
-			}
+			std::cout << "changed mem on loop i: " << i << ", old: " << mem / 1024 << " vs. new: " << giga::Performance::get_usage() / 1024 << " kB" << std::endl;
 		}
 		local_data += data_size.at(i);
 	}

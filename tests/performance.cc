@@ -30,10 +30,10 @@ TEST_CASE("giga|performance") {
 	size_t n_attempts = 1;
 	size_t file_size = 1024 * 1024; //  * 1024;
 	size_t page_size = 16 * 1024;
-	size_t edit_size = 4 * 512;
+	size_t edit_size = 8 * 512;
 	size_t pattern_size = file_size / edit_size;
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size, 3 * page_size, 100)));
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size, 3 * page_size, 1)));
 
 	p->set_file(f);
 

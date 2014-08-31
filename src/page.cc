@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include <iostream>
+
 #include "libs/cachepp/globals.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -105,6 +107,7 @@ void giga::Page::aux_unload() {
 	fp = NULL;
 
 	this->data.clear();
+	std::cout << "unloading a page" << std::endl;
 	std::vector<uint8_t>().swap(this->data);
 
 	// we are now reading a "clean" file again next time

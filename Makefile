@@ -65,3 +65,6 @@ memcheck: clean $(EXECUTABLE) prep
 
 clean:
 	@rm -f $(EXECUTABLE) *.o *.log core
+
+trace: $(EXECUTABLE)
+	@strace -f ./$(EXECUTABLE) > strace.log 2>&1
