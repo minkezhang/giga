@@ -66,7 +66,8 @@ void giga::Page::aux_load() {
 
 	std::vector<uint8_t> buf(this->get_size(), 0);
 
-	std::cout << "loading a page" << std::endl;
+	std::cout << "loading page " << this->get_identifier() << " from file " << this->get_filename()  << std::endl;
+	std::cout << " -- page dump: " << this->get_size() << std::endl;
 
 	// load data into the page
 	if(!this->get_is_dirty()) {
@@ -98,6 +99,9 @@ void giga::Page::aux_load() {
 void giga::Page::aux_unload() {
 	this->set_size(this->data.size());
 
+	std::cout << "unloading page " << this->get_identifier() << " to file " << this->get_filename()  << std::endl;
+	std::cout << " -- page dump: " << this->get_size() << std::endl;
+
 	FILE *fp = fopen(this->get_filename().c_str(), "w");
 	if(fp == NULL) {
 		std::stringstream buf;
@@ -111,7 +115,6 @@ void giga::Page::aux_unload() {
 
 	this->data.clear();
 
-	std::cout << "unloading a page" << std::endl;
 	std::vector<uint8_t>().swap(this->data);
 
 	// we are now reading a "clean" file again next time
