@@ -27,13 +27,15 @@ TEST_CASE("giga|performance") {
 
 	REQUIRE_THROWS_AS(p->run("ERR", std::vector<size_t>({1}), std::vector<uint8_t>({giga::Performance::W}), std::vector<size_t>({100}), 1, 100), exceptionpp::InvalidOperation);
 
+	size_t n_cache = 100;
 	size_t n_attempts = 1;
-	size_t file_size = 1024 * 1024 * 1024;
+	size_t file_size = (size_t) 1024 * 1024 * 200;
 	size_t page_size = 16 * 1024;
 	size_t edit_size = 512;
 	size_t pattern_size = file_size / edit_size;
 
-	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size, 3 * page_size, 1)));
+	// 2 * page_size and 3 * page_size are the initial and maximum page sizes dictated by giga::Config::Config and used to juggle data in the cache
+	std::shared_ptr<giga::File> f (new giga::File("tests/files/giga-performance", "rw+", giga::Config(2 * page_size, 3 * page_size, n_cache)));
 
 	REQUIRE_NOTHROW(p->set_file(f));
 

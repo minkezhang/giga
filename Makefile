@@ -64,7 +64,7 @@ memcheck: clean $(EXECUTABLE) prep
 	@ulimit -c unlimited && valgrind --leak-check=full --show-leak-kinds=all ./$(EXECUTABLE) 2>&1 | tee memcheck.log
 
 clean:
-	@rm -f $(EXECUTABLE) *.o *.log core
+	@rm -f $(EXECUTABLE) *.o *.log core tests/files/*
 
 trace: $(EXECUTABLE)
 	@strace -f ./$(EXECUTABLE) > strace.log 2>&1
