@@ -13,8 +13,6 @@
 #include <thread>
 #include <vector>
 
-#include <iostream>
-
 #include "libs/exceptionpp/exception.h"
 
 #include "src/performance.h"
@@ -229,7 +227,6 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 	std::clock_t start;
 	std::vector<uint8_t> buf;
 	std::string str;
-	size_t mem = 0;
 	for(size_t i = 0; i < access_pattern.size(); ++i) {
 		start = std::clock();
 		client->seek(access_pattern.at(i), true, true);
@@ -239,7 +236,6 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 				start = std::clock();
 				client->read(data_size.at(i));
 				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
-				mem = giga::Performance::get_usage();
 				break;
 			case giga::Performance::W:
 				buf = std::vector<uint8_t> (data_size.at(i), 0xff);
@@ -258,9 +254,6 @@ void giga::Performance::aux_run(const std::shared_ptr<std::atomic<double>>& runt
 				client->erase(data_size.at(i));
 				local_runtime += (std::clock() - start) / (double) (CLOCKS_PER_SEC / USEC);
 				break;
-		}
-		if(mem != giga::Performance::get_usage()) {
-			std::cout << "changed mem on loop i: " << i << ", old: " << mem / 1024 << " vs. new: " << giga::Performance::get_usage() / 1024 << " kB" << std::endl;
 		}
 		local_data += data_size.at(i);
 	}

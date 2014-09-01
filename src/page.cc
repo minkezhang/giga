@@ -3,8 +3,6 @@
 #include <string>
 #include <vector>
 
-#include <iostream>
-
 #include "libs/cachepp/globals.h"
 #include "libs/exceptionpp/exception.h"
 #include "libs/md5/md5.h"
@@ -20,7 +18,7 @@ giga::Page::Page(cachepp::identifier id, std::string filename, size_t file_offse
 }
 giga::Page::~Page() {
 	// remove tmp file to lessen bloat
-	if(this->cached.compare(this->filename) != 0) {
+	if(this->cached.compare(this->filename) != 0 && this->filename.compare("") != 0) {
 		remove(this->get_filename().c_str());
 	}
 }
@@ -66,9 +64,6 @@ void giga::Page::aux_load() {
 
 	std::vector<uint8_t> buf(this->get_size(), 0);
 
-	std::cout << "loading page " << this->get_identifier() << " from file " << this->get_filename()  << std::endl;
-	std::cout << " -- page dump: " << this->get_size() << std::endl;
-
 	// load data into the page
 	if(!this->get_is_dirty()) {
 		FILE *fp = fopen(this->get_filename().c_str(), "r");
@@ -86,7 +81,6 @@ void giga::Page::aux_load() {
 		if(fread(buf.data(), sizeof(char), this->get_size(), fp) < this->get_size()) {
 			fclose(fp);
 			fp = NULL;
-			std::cout << "cached: " << this->cached << ", filename: " << this->get_filename() << std::endl;
 			throw(exceptionpp::RuntimeError("giga::Page::aux_load", "invalid result returned from fread"));
 		}
 		fclose(fp);
@@ -99,33 +93,39 @@ void giga::Page::aux_load() {
 void giga::Page::aux_unload() {
 	this->set_size(this->data.size());
 
-	std::cout << "unloading page " << this->get_identifier() << " to file " << this->get_filename()  << std::endl;
-	std::cout << " -- page dump: " << this->get_size() << std::endl;
+	if(this->get_is_dirty()) {
+		FILE *fp = fopen(this->get_filename().c_str(), "w");
+		if(fp == NULL) {
+			std::stringstream buf;
+			buf << "cannot open working file '" << this->get_filename() << "'";
+			throw(exceptionpp::RuntimeError("giga::Page::aux_unload", buf.str()));
+		}
 
-	FILE *fp = fopen(this->get_filename().c_str(), "w");
-	if(fp == NULL) {
-		std::stringstream buf;
-		buf << "cannot open working file '" << this->get_filename() << "'";
-		throw(exceptionpp::RuntimeError("giga::Page::aux_unload", buf.str()));
+		if(fputs(std::string(this->data.begin(), this->data.end()).c_str(), fp) < 0) {
+			fclose(fp);
+			fp = NULL;
+			throw(exceptionpp::RuntimeError("giga::Page::aux_unload", "invalid result returned from fputs"));
+		}
+
+		fclose(fp);
+		fp = NULL;
+
+		// we are now reading a "clean" file again next time
+		this->set_file_offset(0);
+
+		// remove tmp file to lessen bloat
+		if(this->cached.compare(this->filename)) {
+			remove(this->cached.c_str());
+		}
+
+		this->set_filename(this->get_filename());
+		this->set_is_dirty(false);
 	}
-
-	fputs(std::string(this->data.begin(), this->data.end()).c_str(), fp);
-	fclose(fp);
-	fp = NULL;
 
 	this->data.clear();
 
 	std::vector<uint8_t>().swap(this->data);
 
-	// we are now reading a "clean" file again next time
-	this->set_file_offset(0);
-
-	// remove tmp file to lessen bloat
-	if(this->cached.compare(this->filename) != 0) {
-		remove(this->cached.c_str());
-	}
-	this->set_filename(this->get_filename());
-	this->set_is_dirty(false);
 }
 
 std::string giga::Page::hash() { return(md5(std::string(this->data.begin(), this->data.end()))); }
