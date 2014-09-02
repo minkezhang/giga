@@ -8,8 +8,8 @@ CFLAGS=-Wall -Werror -O3 -std=c++11 -g -Wl,--no-as-needed -ldl -rdynamic -fstack
 CFLAGS+=-D _FILE_OFFSET_BITS=64
 
 #custom flags
-CONCURRENT=false
-PERFORMANCE=false
+CONCURRENT?=false
+PERFORMANCE?=false
 ifeq ($(CONCURRENT), true)
 	CFLAGS+=-D _GIGA_CONCURRENT_TESTS
 endif
@@ -46,6 +46,7 @@ prep:
 	@rm -f "tests/files/nonexistent"
 	@rm -f "tests/files/giga-performance"
 
+	@mkdir -p "tests/files/"
 	@mkdir -p "/tmp/giga/"
 	@echo "hello world!" > "tests/files/giga-file-read"
 	@echo "foo" > "tests/files/foo"
