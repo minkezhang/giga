@@ -78,6 +78,10 @@ void giga::File::load() {
 		} else {
 			// create the file
 			fp = fopen(filename.c_str(), "w+");
+			if(fp == NULL) {
+				// folder does not exist
+				throw(exceptionpp::InvalidOperation("giga::File::File", "cannot create new file -- path does not exist"));
+			}
 		}
 	}
 	fseek(fp, 0, SEEK_END);

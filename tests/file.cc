@@ -18,6 +18,7 @@ TEST_CASE("giga|config-probe") {
 
 TEST_CASE("giga|file") {
 	REQUIRE_THROWS_AS(giga::File("tests/files/nonexistent", "r"), exceptionpp::InvalidOperation);
+	REQUIRE_THROWS_AS(giga::File("tests/files/nonexistent/nonexistent", "r+"), exceptionpp::InvalidOperation);
 
 	std::shared_ptr<giga::File> f (new giga::File("tests/files/foo", "r", giga::Config(3, 4, 2)));
 	REQUIRE(f->get_filename().compare("tests/files/foo") == 0);
